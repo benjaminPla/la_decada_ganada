@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { readJson, writeJson } from "./storage";
 
 export type Settings = {
     muted:  boolean;
@@ -48,21 +49,13 @@ function apply(game: Phaser.Game, settings: Settings) {
 }
 
 function load(): Settings {
-    try {
-        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}");
-        return {
-            muted:  typeof saved.muted === "boolean" ? saved.muted : SETTINGS_DEFAULTS.muted,
-            volume: Phaser.Math.Clamp(Number(saved.volume ?? SETTINGS_DEFAULTS.volume) || 0, 0, 1),
-        };
-    } catch {
-        return { ...SETTINGS_DEFAULTS };
-    }
+    const saved = readJson(STORAGE_KEY) as Partial<Settings> | null;
+    return {
+        muted:  typeof saved?.muted === "boolean" ? saved.muted : SETTINGS_DEFAULTS.muted,
+        volume: Phaser.Math.Clamp(Number(saved?.volume ?? SETTINGS_DEFAULTS.volume) || 0, 0, 1),
+    };
 }
 
 function save(settings: Settings) {
-    try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-    } catch {
-        // storage blocked or full: keep in-memory settings
-    }
+    writeJson(STORAGE_KEY, settings);
 }
