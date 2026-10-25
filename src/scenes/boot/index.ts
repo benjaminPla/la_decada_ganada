@@ -16,6 +16,7 @@ export class Boot extends Phaser.Scene {
 
     create() {
         initSettings(this.game);
+        this.scene.launch("Notifications");
         this.scene.start("Preloader");
     }
 }
