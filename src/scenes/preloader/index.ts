@@ -23,6 +23,7 @@ export class Preloader extends Phaser.Scene {
             .setStrokeStyle(bar.border, THEME.colors.text);
         const fill = this.add.rectangle(centerX - bar.width / 2, barY, 0, bar.height, THEME.colors.accent).setOrigin(0, 0.5);
 
+        this.load.on("loaderror", (file: Phaser.Loader.File) => console.warn(`Failed to load "${file.key}" from ${file.url}`));
         this.load.on("progress", (value: number) => { fill.width = bar.width * value });
 
         this.load.audio("music", "assets/music/melody.wav");
