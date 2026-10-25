@@ -1,12 +1,18 @@
 import { LAYOUT } from "./layout";
 import Phaser from "phaser";
 import { THEME, textStyle } from "../../theme";
-import { UNLOCK_EVENT } from "../../progress";
+import type { Ending } from "../../progress/endings";
+import { ENDING_EVENT, UNLOCK_EVENT } from "../../progress";
 import type { Unlockable } from "../../progress/unlockables";
+
+type Toast = {
+    name:  string;
+    title: string;
+};
 
 // always-on overlay: any scene can trigger an unlock and the toast renders above it
 export class Notifications extends Phaser.Scene {
-    private queue:   Unlockable[] = [];
+    private queue:   Toast[] = [];
     private showing: boolean = false;
 
     constructor() {
@@ -14,21 +20,28 @@ export class Notifications extends Phaser.Scene {
     }
 
     create() {
-        this.game.events.on(UNLOCK_EVENT, this.enqueue, this);
-        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.game.events.off(UNLOCK_EVENT, this.enqueue, this));
+        const onEnding = ({ name }: Ending) => this.enqueue({ name, title: "FINAL DESBLOQUEADO" });
+        const onUnlock = ({ name }: Unlockable) => this.enqueue({ name, title: "OBJETO DESBLOQUEADO" });
+
+        this.game.events.on(ENDING_EVENT, onEnding);
+        this.game.events.on(UNLOCK_EVENT, onUnlock);
+        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+            this.game.events.off(ENDING_EVENT, onEnding);
+            this.game.events.off(UNLOCK_EVENT, onUnlock);
+        });
     }
 
-    private enqueue(unlockable: Unlockable) {
-        this.queue.push(unlockable);
+    private enqueue(toast: Toast) {
+        this.queue.push(toast);
         if (!this.showing) {
             this.showNext();
         }
     }
 
     private showNext() {
-        const unlockable = this.queue.shift();
-        this.showing = unlockable !== undefined;
-        if (!unlockable) {
+        const next = this.queue.shift();
+        this.showing = next !== undefined;
+        if (!next) {
             return;
         }
 
@@ -36,8 +49,8 @@ export class Notifications extends Phaser.Scene {
         const x = this.scale.width - margin - width;
         const toast = this.add.container(x, -height, [
             this.add.rectangle(0, 0, width, height, THEME.colors.surface).setOrigin(0).setStrokeStyle(border, THEME.colors.accent),
-            this.add.text(padding, padding, "OBJETO DESBLOQUEADO", textStyle("ui", "sm", "accent")),
-            this.add.text(padding, height - padding, unlockable.name, textStyle("ui", "md")).setOrigin(0, 1),
+            this.add.text(padding, padding, next.title, textStyle("ui", "sm", "accent")),
+            this.add.text(padding, height - padding, next.name, textStyle("ui", "md")).setOrigin(0, 1),
         ]);
 
         this.tweens.chain({

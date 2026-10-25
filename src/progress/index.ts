@@ -1,10 +1,11 @@
+import { ENDINGS, type EndingId } from "./endings";
 import Phaser from "phaser";
 import { UNLOCKABLES, type Unlockable, type UnlockableId } from "./unlockables";
 import { readJson, writeJson } from "../storage";
 
 export type GameEvent =
     | { choice: string; type: "choice-made" }
-    | { ending: string; type: "ending-reached" }
+    | { ending: EndingId; type: "ending-reached" }
     | { type: "run-started" };
 
 export type Progress = {
@@ -13,6 +14,7 @@ export type Progress = {
     unlocked: string[];
 };
 
+export const ENDING_EVENT = "progress-ending";
 export const UNLOCK_EVENT = "progress-unlock";
 
 const STORAGE_KEY = "la-decada-ganada:progress";
@@ -29,6 +31,7 @@ export function isUnlocked(id: UnlockableId) {
 
 // every gameplay fact goes through here; unlock rules react to events instead of being called from scenes
 export function track(game: Phaser.Game, event: GameEvent) {
+    const isNewEnding = event.type === "ending-reached" && !progress.endings.includes(event.ending);
     record(event);
 
     const unlocked: Unlockable[] = UNLOCKABLES.filter((u: Unlockable) =>
@@ -37,6 +40,9 @@ export function track(game: Phaser.Game, event: GameEvent) {
 
     writeJson(STORAGE_KEY, progress);
     unlocked.forEach((u) => game.events.emit(UNLOCK_EVENT, u));
+    if (isNewEnding) {
+        game.events.emit(ENDING_EVENT, ENDINGS.find(({ id }) => id === event.ending));
+    }
 }
 
 function record(event: GameEvent) {
