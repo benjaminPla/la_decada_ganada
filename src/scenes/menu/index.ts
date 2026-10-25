@@ -1,6 +1,6 @@
 import { Button } from "../../ui/button";
 import { CONTROLS, PAUSE_KEY, bindAudioKeys } from "../../controls";
-import { CREDITS } from "./credits";
+import { CREDITS, KOFI_URL } from "./credits";
 import { ENDINGS } from "../../progress/endings";
 import { LAYOUT } from "./layout";
 import Phaser from "phaser";
@@ -120,6 +120,10 @@ export class Menu extends Phaser.Scene {
             align:       "center",
             lineSpacing: THEME.spacing.sm,
         }).setOrigin(0.5, 0));
+        // noopener: the new tab gets no window.opener handle back into the game
+        this.addButton(height * LAYOUT.back.y - LAYOUT.buttons.gap, "Invitame un café (Ko-fi)", () => {
+            window.open(KOFI_URL, "_blank", "noopener,noreferrer");
+        });
         this.addBack();
     }
 
