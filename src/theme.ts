@@ -7,6 +7,7 @@ export const THEME = {
         ink:         0xc81828,
         paper:       0xf5f5dc,
         paperBorder: 0x4c3f2f,
+        phosphor:    0x6fdc6f,
         surface:     0x1a1310,
         text:        0xffffff,
         textDark:    0x1a1a1a,

@@ -1,15 +1,22 @@
 import { Button } from "../../ui/button";
+import { CONTROLS, PAUSE_KEY, bindAudioKeys } from "../../controls";
 import { CREDITS } from "./credits";
+import { ENDINGS } from "../../progress/endings";
 import { LAYOUT } from "./layout";
 import Phaser from "phaser";
 import { THEME, textStyle } from "../../theme";
 import { type MenuData, View } from "./types";
+import { UNLOCKABLES } from "../../progress/unlockables";
 import { VOLUME_STEP, changeVolume, getSetting } from "../../settings";
+import { getProgress } from "../../progress";
 
 export class Menu extends Phaser.Scene {
     private content!:    Phaser.GameObjects.Container;
     private currentView: View    = View.Main;
+    private from:        string  = "";
     private paused:      boolean = false;
+
+    private refreshSettings: (() => void) | null = null;
 
     constructor() {
         super("Menu");
@@ -18,6 +25,7 @@ export class Menu extends Phaser.Scene {
     init(data: MenuData) {
         this.paused      = data.paused ?? false;
         this.currentView = data.view ?? View.Main;
+        this.from        = data.from ?? "";
     }
 
     create() {
@@ -26,16 +34,31 @@ export class Menu extends Phaser.Scene {
 
         if (this.paused) {
             this.scene.bringToTop();
-            this.input.keyboard!.on("keydown-ESC", () => this.resume());
+            this.input.keyboard!.on(PAUSE_KEY, () => this.resume());
         }
+        bindAudioKeys(this);
+
+        const onSettingsChange = () => this.refreshSettings?.();
+        this.registry.events.on(Phaser.Data.Events.CHANGE_DATA, onSettingsChange);
+        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+            this.registry.events.off(Phaser.Data.Events.CHANGE_DATA, onSettingsChange);
+        });
+
         this.show(this.currentView);
     }
 
     private show(view: View) {
         this.currentView = view;
+        this.refreshSettings = null;
         this.content.removeAll(true);
 
         switch (view) {
+            case View.Collection:
+                this.showCollection();
+                break;
+            case View.Controls:
+                this.showControls();
+                break;
             case View.Credits:
                 this.showCredits();
                 break;
@@ -46,6 +69,45 @@ export class Menu extends Phaser.Scene {
                 this.showSettings();
                 break;
         }
+    }
+
+    private showCollection() {
+        const { buttons, collection } = LAYOUT;
+        const { endings, unlocked } = getProgress();
+        const top = this.scale.height * buttons.y;
+        const found = UNLOCKABLES.filter(({ id }) => unlocked.includes(id)).length;
+
+        this.addTitle("Colección");
+        this.content.add(this.add.text(0, top, `Objetos ${found}/${UNLOCKABLES.length}`, textStyle("ui", "md", "accent")).setOrigin(0.5));
+        UNLOCKABLES.forEach(({ description, id, name }, i) => {
+            const y = top + (i + 1) * collection.rowHeight;
+            const open = unlocked.includes(id);
+            this.content.add([
+                this.add.text(0, y, open ? name : "???", textStyle("ui", "md", open ? "text" : "textMuted")).setOrigin(0.5, 1),
+                this.add.text(0, y, open ? description : "Seguí jugando", textStyle("ui", "sm", "textMuted")).setOrigin(0.5, 0),
+            ]);
+        });
+
+        const endingsY = top + UNLOCKABLES.length * collection.rowHeight + collection.section;
+        const reached = ENDINGS.filter(({ id }) => endings.includes(id)).length;
+        const endingsLabel = ENDINGS.length > 0 ? `Finales ${reached}/${ENDINGS.length}` : "Finales: próximamente";
+        this.content.add(this.add.text(0, endingsY, endingsLabel, textStyle("ui", "md", "accent")).setOrigin(0.5));
+        this.addBack();
+    }
+
+    private showControls() {
+        const { buttons, controls } = LAYOUT;
+        const top = this.scale.height * buttons.y;
+
+        this.addTitle("Controles");
+        CONTROLS.forEach(({ action, key }, i) => {
+            const y = top + i * controls.rowHeight;
+            this.content.add([
+                this.add.text(-controls.gap, y, key, textStyle("ui", "md", "accent")).setOrigin(1, 0.5),
+                this.add.text(controls.gap, y, action, textStyle("ui", "md")).setOrigin(0, 0.5),
+            ]);
+        });
+        this.addBack();
     }
 
     private showCredits() {
@@ -69,8 +131,10 @@ export class Menu extends Phaser.Scene {
         this.content.add(this.add.image(0, height * logo.y, "logo").setScale(logo.scale));
         this.addButton(top, this.paused ? "Continuar" : "Jugar", () => this.play());
         this.addButton(top + buttons.gap, "Ajustes", () => this.show(View.Settings));
-        this.addButton(top + buttons.gap * 2, "Créditos", () => this.show(View.Credits));
-        const share = this.addButton(top + buttons.gap * 3, "Compartir", () => this.share(share));
+        this.addButton(top + buttons.gap * 2, "Colección", () => this.show(View.Collection));
+        this.addButton(top + buttons.gap * 3, "Controles", () => this.show(View.Controls));
+        this.addButton(top + buttons.gap * 4, "Créditos", () => this.show(View.Credits));
+        const share = this.addButton(top + buttons.gap * 5, "Compartir", () => this.share(share));
     }
 
     private showSettings() {
@@ -81,24 +145,22 @@ export class Menu extends Phaser.Scene {
         const volumeLabel = () => `Volumen: ${Math.round(getSetting(registry, "volume") * 100)}%`;
 
         this.addTitle("Ajustes");
-        const sound = this.addButton(top, soundLabel(), () => {
-            registry.toggle("muted");
-            sound.setLabel(soundLabel());
-        });
+        const sound = this.addButton(top, soundLabel(), () => registry.toggle("muted"));
 
         const volumeY = top + buttons.gap;
         const volumeText = this.add.text(0, volumeY, volumeLabel(), textStyle("ui", "md")).setOrigin(0.5);
-        const step = (delta: number) => {
-            changeVolume(registry, delta);
+        this.content.add([
+            volumeText,
+            new Button(this, -volume.offset, volumeY, "-", () => changeVolume(registry, -VOLUME_STEP), volume.size),
+            new Button(this, volume.offset, volumeY, "+", () => changeVolume(registry, VOLUME_STEP), volume.size),
+        ]);
+        this.addBack();
+
+        // keys (M, arrows) change settings too, so labels follow the registry rather than the buttons
+        this.refreshSettings = () => {
             sound.setLabel(soundLabel());
             volumeText.setText(volumeLabel());
         };
-        this.content.add([
-            volumeText,
-            new Button(this, -volume.offset, volumeY, "-", () => step(-VOLUME_STEP), volume.size),
-            new Button(this, volume.offset, volumeY, "+", () => step(VOLUME_STEP), volume.size),
-        ]);
-        this.addBack();
     }
 
     private play() {
@@ -106,11 +168,11 @@ export class Menu extends Phaser.Scene {
             this.resume();
             return;
         }
-        this.scene.start("Desk");
+        this.scene.start("Intro");
     }
 
     private resume() {
-        this.scene.resume("Desk");
+        this.scene.resume(this.from);
         this.scene.stop();
     }
 

@@ -7,12 +7,20 @@ export const LAYOUT = {
     },
     buttons: {
         gap: BUTTON.height + THEME.spacing.md,
-        y:   0.5,
+        y:   0.43,
+    },
+    collection: {
+        rowHeight: 56,
+        section:   THEME.spacing.xl,
+    },
+    controls: {
+        gap:       THEME.spacing.md,
+        rowHeight: 48,
     },
     feedbackDuration: 1500,
     logo: {
-        scale: 0.45,
-        y:     0.25,
+        scale: 0.4,
+        y:     0.22,
     },
     title: {
         y: 0.3,

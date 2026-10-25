@@ -1,11 +1,9 @@
 import { LAYOUT } from "./layout";
-import type { MenuData } from "../menu/types";
+import { PAUSE_KEY, bindAudioKeys } from "../../controls";
 import Phaser from "phaser";
 import { THEME, textStyle } from "../../theme";
-import { TopBar } from "../../ui/topBar";
-import { VOLUME_STEP, changeVolume } from "../../settings";
-
-const MUSIC_MIX = 0.5;
+import { openPauseMenu } from "../menu/pause";
+import { playMusic } from "../../audio";
 
 export class Desk extends Phaser.Scene {
     private paper!: Phaser.Geom.Rectangle;
@@ -18,9 +16,7 @@ export class Desk extends Phaser.Scene {
     create() {
         const { height, width } = this.scale;
         const { paper } = LAYOUT;
-        const centerY = (height + TopBar.HEIGHT) / 2;
-
-        new TopBar(this, () => this.pause({ view: "settings" }));
+        const centerY = height / 2;
 
         this.paper = new Phaser.Geom.Rectangle((width - paper.width) / 2, centerY - paper.height / 2, paper.width, paper.height);
         this.add.rectangle(this.paper.centerX, this.paper.centerY, paper.width, paper.height, THEME.colors.paper)
@@ -32,28 +28,18 @@ export class Desk extends Phaser.Scene {
             textStyle("document", "md", "textDark"),
         ).setOrigin(0.5, 0);
 
-        const music = this.sound.get("music") ?? this.sound.add("music", { loop: true, volume: MUSIC_MIX });
-        if (!music.isPlaying) {
-            music.play();
-        }
+        playMusic(this);
 
         const keyboard = this.input.keyboard!;
         this.space = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
-        keyboard.on("keydown-DOWN", () => changeVolume(this.registry, -VOLUME_STEP));
-        keyboard.on("keydown-ESC", () => this.pause());
-        keyboard.on("keydown-M", () => this.registry.toggle("muted"));
-        keyboard.on("keydown-UP", () => changeVolume(this.registry, VOLUME_STEP));
+        keyboard.on(PAUSE_KEY, () => openPauseMenu(this));
+        bindAudioKeys(this);
     }
 
     update() {
         if (Phaser.Input.Keyboard.JustDown(this.space)) {
             this.stamp();
         }
-    }
-
-    private pause(data: MenuData = {}) {
-        this.scene.launch("Menu", { ...data, paused: true });
-        this.scene.pause();
     }
 
     private stamp() {
