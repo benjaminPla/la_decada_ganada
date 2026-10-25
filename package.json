@@ -1,16 +1,16 @@
 {
-  "dependencies": {
-    "phaser": "^4.2.1"
-  },
-  "devDependencies": {
-    "typescript": "^7.0.2",
-    "vite": "^8.3.5"
-  },
-  "name": "la-decada-ganada",
-  "private": true,
-  "scripts": {
-    "dev": "vite --host 127.0.0.1"
-  },
-  "type": "module",
-  "version": "0.1.0"
+    "dependencies": {
+        "phaser": "^4.2.1"
+    },
+    "devDependencies": {
+        "typescript": "^7.0.2",
+        "vite": "^8.3.5"
+    },
+    "name": "la-decada-ganada",
+    "private": true,
+    "scripts": {
+        "dev": "vite --host 127.0.0.1"
+    },
+    "type": "module",
+    "version": "0.1.0"
 }
