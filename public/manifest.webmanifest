@@ -1,0 +1,28 @@
+{
+    "background_color": "#281e19",
+    "display": "fullscreen",
+    "icons": [
+        {
+            "sizes": "192x192",
+            "src": "/icon-192.png",
+            "type": "image/png"
+        },
+        {
+            "sizes": "512x512",
+            "src": "/icon-512.png",
+            "type": "image/png"
+        },
+        {
+            "purpose": "maskable",
+            "sizes": "512x512",
+            "src": "/icon-maskable-512.png",
+            "type": "image/png"
+        }
+    ],
+    "lang": "es",
+    "name": "La Década Ganada",
+    "orientation": "landscape",
+    "short_name": "Década Ganada",
+    "start_url": "/",
+    "theme_color": "#281e19"
+}
