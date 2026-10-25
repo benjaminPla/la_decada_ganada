@@ -1,8 +1,9 @@
 import { LAYOUT } from "./layout";
+import type { MenuData } from "../menu/types";
 import Phaser from "phaser";
 import { THEME, textStyle } from "../../theme";
 import { TopBar } from "../../ui/topBar";
-import { VOLUME_STEP, getSetting, setSetting } from "../../settings";
+import { VOLUME_STEP, changeVolume } from "../../settings";
 
 const MUSIC_MIX = 0.5;
 
@@ -19,7 +20,7 @@ export class Desk extends Phaser.Scene {
         const { paper } = LAYOUT;
         const centerY = (height + TopBar.HEIGHT) / 2;
 
-        new TopBar(this);
+        new TopBar(this, () => this.pause({ view: "settings" }));
 
         this.paper = new Phaser.Geom.Rectangle((width - paper.width) / 2, centerY - paper.height / 2, paper.width, paper.height);
         this.add.rectangle(this.paper.centerX, this.paper.centerY, paper.width, paper.height, THEME.colors.paper)
@@ -38,9 +39,10 @@ export class Desk extends Phaser.Scene {
 
         const keyboard = this.input.keyboard!;
         this.space = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
-        keyboard.on("keydown-DOWN", () => this.changeVolume(-VOLUME_STEP));
+        keyboard.on("keydown-DOWN", () => changeVolume(this.registry, -VOLUME_STEP));
+        keyboard.on("keydown-ESC", () => this.pause());
         keyboard.on("keydown-M", () => this.registry.toggle("muted"));
-        keyboard.on("keydown-UP", () => this.changeVolume(VOLUME_STEP));
+        keyboard.on("keydown-UP", () => changeVolume(this.registry, VOLUME_STEP));
     }
 
     update() {
@@ -49,12 +51,9 @@ export class Desk extends Phaser.Scene {
         }
     }
 
-    private changeVolume(step: number) {
-        const volume = Phaser.Math.Clamp(getSetting(this.registry, "volume") + step, 0, 1);
-        setSetting(this.registry, "volume", Math.round(volume / VOLUME_STEP) * VOLUME_STEP);
-        if (step > 0) {
-            setSetting(this.registry, "muted", false);
-        }
+    private pause(data: MenuData = {}) {
+        this.scene.launch("Menu", { ...data, paused: true });
+        this.scene.pause();
     }
 
     private stamp() {

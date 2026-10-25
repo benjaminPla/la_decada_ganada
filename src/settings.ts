@@ -14,6 +14,14 @@ export const VOLUME_STEP = 0.2;
 
 const STORAGE_KEY = "la-decada-ganada:settings";
 
+export function changeVolume(registry: Phaser.Data.DataManager, step: number) {
+    const volume = Phaser.Math.Clamp(getSetting(registry, "volume") + step, 0, 1);
+    setSetting(registry, "volume", Math.round(volume / VOLUME_STEP) * VOLUME_STEP);
+    if (step > 0) {
+        setSetting(registry, "muted", false);
+    }
+}
+
 export function getSetting<K extends keyof Settings>(registry: Phaser.Data.DataManager, key: K): Settings[K] {
     return registry.get(key);
 }

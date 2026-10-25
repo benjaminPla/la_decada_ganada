@@ -11,7 +11,7 @@ export class TopBar extends Phaser.GameObjects.Container {
 
     private readonly icons: Phaser.GameObjects.Graphics;
 
-    constructor(scene: Phaser.Scene) {
+    constructor(scene: Phaser.Scene, onSettings: () => void) {
         super(scene, 0, 0);
         const { width } = scene.scale;
 
@@ -30,7 +30,7 @@ export class TopBar extends Phaser.GameObjects.Container {
                 setSetting(scene.registry, "volume", level * VOLUME_STEP);
             });
         }
-        this.addButton(this.gearX(), LAYOUT.icon, () => console.log("settings: open"));
+        this.addButton(this.gearX(), LAYOUT.icon, onSettings);
 
         scene.add.existing(this);
         this.redraw();
