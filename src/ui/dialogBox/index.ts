@@ -20,6 +20,7 @@ export type Speaker = {
 
 export class DialogBox extends Phaser.GameObjects.Container {
     static readonly HEIGHT = LAYOUT.height;
+    static readonly LINE_EVENT = "line";
 
     private readonly choices:     Phaser.GameObjects.Container;
     private readonly hint:        Phaser.GameObjects.Text;
@@ -128,6 +129,8 @@ export class DialogBox extends Phaser.GameObjects.Container {
         this.fullText = line.text;
         this.speakerName.setText(line.speaker.name).setColor(color);
         this.lineText.setText("").setColor(color);
+
+        this.emit(DialogBox.LINE_EVENT, line);
 
         let shown = 0;
         this.typing = this.scene.time.addEvent({
