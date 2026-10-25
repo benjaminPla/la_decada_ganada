@@ -9,9 +9,7 @@
   "name": "la-decada-ganada",
   "private": true,
   "scripts": {
-    "build": "tsc --noEmit && vite build",
-    "dev": "vite --host 127.0.0.1",
-    "typecheck": "tsc --noEmit"
+    "dev": "vite --host 127.0.0.1"
   },
   "type": "module",
   "version": "0.1.0"
