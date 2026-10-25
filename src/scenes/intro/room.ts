@@ -2,6 +2,7 @@ import { DialogBox } from "../../ui/dialogBox";
 import { LAYOUT } from "./layout";
 import Phaser from "phaser";
 import { THEME, textStyle, toCss } from "../../theme";
+import type { TvChannel } from "./channels";
 import { isUnlocked } from "../../progress";
 
 const COLORS = {
@@ -11,22 +12,11 @@ const COLORS = {
     knob:       0x6e625a,
     poster:     0xd8cdb0,
     posterInk:  0x1f3a6b,
-    screen:     0x0b1a0f,
-    screenBar:  0x113a1c,
     stripe:     0x342824,
     wall:       0x3b2e2a,
     wood:       0x5a3a24,
     woodDark:   0x3e2818,
 } as const;
-
-const CHART = [0.15, 0.22, 0.18, 0.32, 0.4, 0.36, 0.55, 0.62, 0.58, 0.78, 0.95];
-
-const TICKER = [
-    "RIESGO PAÍS ▼ MÍNIMO HISTÓRICO",
-    "DÓLAR: QUIETO HACE 14 MESES",
-    "SUPERÁVIT FISCAL ▲ OTRA VEZ",
-    "MERVAL ▲ +12% EN EL DÍA",
-];
 
 export function drawRoom(scene: Phaser.Scene) {
     const { width } = scene.scale;
@@ -46,8 +36,9 @@ export function drawRoom(scene: Phaser.Scene) {
     }
 }
 
-export function drawTv(scene: Phaser.Scene) {
-    const { antenna, cabinet, casing, flicker, panel, scanline, screen, ticker } = LAYOUT.tv;
+export function drawTv(scene: Phaser.Scene, channel: TvChannel) {
+    const { antenna, cabinet, casing, flicker, panel, scanline, screen } = LAYOUT.tv;
+    const spill = scene.add.graphics();
     const g = scene.add.graphics();
     const centerX = casing.x + (casing.width - panel.width) / 2;
     const s = new Phaser.Geom.Rectangle(
@@ -57,8 +48,7 @@ export function drawTv(scene: Phaser.Scene) {
         screen.height,
     );
 
-    // ---- light spill, antenna, cabinet, casing
-    g.fillStyle(THEME.colors.phosphor, 0.05).fillEllipse(s.centerX, s.centerY, casing.width * 1.6, casing.height * 1.5);
+    // ---- antenna, cabinet, casing
     g.lineStyle(4, COLORS.casingEdge)
         .lineBetween(centerX, casing.y, centerX - antenna, casing.y - antenna)
         .lineBetween(centerX, casing.y, centerX + antenna, casing.y - antenna);
@@ -75,43 +65,66 @@ export function drawTv(scene: Phaser.Scene) {
         g.fillRect(panelX - 18, casing.y + 180 + i * 12, 36, 4);
     }
 
-    // ---- screen: header, ticker bar, chart
-    g.fillStyle(COLORS.screen).fillRoundedRect(s.x, s.y, s.width, s.height, screen.radius);
-    g.fillStyle(COLORS.screenBar).fillRect(s.x, s.y + 12, s.width, 28).fillRect(s.x, s.bottom - 48, s.width, 28);
-
-    const chart = new Phaser.Geom.Rectangle(s.x + 16, s.y + 112, s.width - 32, 80);
-    g.lineStyle(2, THEME.colors.phosphor, 0.4)
-        .lineBetween(chart.left, chart.bottom, chart.right, chart.bottom)
-        .lineBetween(chart.left, chart.top, chart.left, chart.bottom);
-    g.lineStyle(4, THEME.colors.phosphor).strokePoints(CHART.map((v, i) => new Phaser.Math.Vector2(
-        chart.left + (chart.width * i) / (CHART.length - 1),
-        chart.bottom - chart.height * v,
-    )));
-
-    const small = textStyle("ui", "sm", "phosphor");
-    scene.add.text(s.x + 12, s.y + 26, "● EN VIVO", small).setOrigin(0, 0.5);
-    scene.add.text(s.right - 12, s.y + 26, "TÑ", small).setOrigin(1, 0.5);
-    scene.add.text(s.x + 16, s.y + 52, "MILEÓN: INFLACIÓN 0%", {
-        ...textStyle("ui", "md", "phosphor"),
-        wordWrap: { width: s.width - 32 },
-    });
-    scene.add.text(chart.right, chart.top - 8, "▲ +38%", small).setOrigin(1, 1);
-
-    let item = 0;
-    const tickerText = scene.add.text(s.x + 12, s.bottom - 34, TICKER[item], small).setOrigin(0, 0.5);
-    scene.time.addEvent({
-        callback: () => tickerText.setText(TICKER[++item % TICKER.length]),
-        delay:    ticker,
-        loop:     true,
-    });
-
-    // ---- CRT: scanlines and flicker on top of the content
+    // ---- CRT: channel content below scanlines and flicker
+    const content = scene.add.container(0, 0);
     const crt = scene.add.graphics().fillStyle(0x000000, 0.25);
     for (let y = s.y; y < s.bottom; y += scanline) {
         crt.fillRect(s.x, y, s.width, 1);
     }
-    const glow = scene.add.rectangle(s.centerX, s.centerY, s.width, s.height, THEME.colors.phosphor, 0.03);
+    const glow = scene.add.rectangle(s.centerX, s.centerY, s.width, s.height);
     scene.tweens.add({ alpha: 0.5, duration: flicker, repeat: -1, targets: glow, yoyo: true });
+
+    let ticker: Phaser.Time.TimerEvent | null = null;
+    const setChannel = (next: TvChannel) => {
+        spill.clear().fillStyle(next.color, 0.05).fillEllipse(s.centerX, s.centerY, casing.width * 1.6, casing.height * 1.5);
+        glow.setFillStyle(next.color, 0.03);
+        ticker?.remove();
+        content.removeAll(true);
+        ticker = drawChannel(scene, content, s, next);
+    };
+    setChannel(channel);
+
+    return { setChannel };
+}
+
+function drawChannel(scene: Phaser.Scene, content: Phaser.GameObjects.Container, s: Phaser.Geom.Rectangle, channel: TvChannel) {
+    const { screen, ticker } = LAYOUT.tv;
+    const color = toCss(channel.color);
+    const small = { ...textStyle("ui", "sm"), color };
+    const g = scene.add.graphics();
+
+    g.fillStyle(channel.screen).fillRoundedRect(s.x, s.y, s.width, s.height, screen.radius);
+    g.fillStyle(channel.bar).fillRect(s.x, s.y + 12, s.width, 28).fillRect(s.x, s.bottom - 48, s.width, 28);
+
+    const chart = new Phaser.Geom.Rectangle(s.x + 16, s.y + 112, s.width - 32, 80);
+    g.lineStyle(2, channel.color, 0.4)
+        .lineBetween(chart.left, chart.bottom, chart.right, chart.bottom)
+        .lineBetween(chart.left, chart.top, chart.left, chart.bottom);
+    g.lineStyle(4, channel.color).strokePoints(channel.chart.map((v, i) => new Phaser.Math.Vector2(
+        chart.left + (chart.width * i) / (channel.chart.length - 1),
+        chart.bottom - chart.height * v,
+    )));
+
+    let item = 0;
+    const tickerText = scene.add.text(s.x + 12, s.bottom - 34, channel.ticker[item], small).setOrigin(0, 0.5);
+    content.add([
+        g,
+        scene.add.text(s.x + 12, s.y + 26, "● EN VIVO", small).setOrigin(0, 0.5),
+        scene.add.text(s.right - 12, s.y + 26, channel.name, small).setOrigin(1, 0.5),
+        scene.add.text(s.x + 16, s.y + 52, channel.headline, {
+            ...textStyle("ui", "md"),
+            color,
+            wordWrap: { width: s.width - 32 },
+        }),
+        scene.add.text(chart.right, chart.top - 8, channel.stat, small).setOrigin(1, 1),
+        tickerText,
+    ]);
+
+    return scene.time.addEvent({
+        callback: () => tickerText.setText(channel.ticker[++item % channel.ticker.length]),
+        delay:    ticker,
+        loop:     true,
+    });
 }
 
 function drawPoster(scene: Phaser.Scene, g: Phaser.GameObjects.Graphics) {

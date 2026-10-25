@@ -3,6 +3,7 @@ import Phaser from "phaser";
 export const THEME = {
     colors: {
         accent:      0x74acdf,
+        alert:       0xff6b6b,
         background:  0x281e19,
         ink:         0xc81828,
         paper:       0xf5f5dc,
