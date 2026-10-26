@@ -9,7 +9,9 @@ export type Unlockable = {
 };
 
 const DILDO_LGBT = 3;
+const MARX_COMMUNISM = 2;
 const PALESTINE_FLAG_PALESTINE = 3;
+const PERON_HANDS_PERONISM = 5;
 
 export const UNLOCKABLES = [
     {
@@ -24,6 +26,20 @@ export const UNLOCKABLES = [
         description: "Para el baño. Nadie pregunta.",
         id:          "consolador-arcoiris",
         name:        "Consolador arcoíris",
+        on:          "choice-made",
+    },
+    {
+        condition:   (_, event) => event.type === "choice-made" && event.stats.communism >= MARX_COMMUNISM,
+        description: "Para la biblioteca. Nunca lo abriste.",
+        id:          "libro-de-marx",
+        name:        "El Capital, de Marx",
+        on:          "choice-made",
+    },
+    {
+        condition:   (_, event) => event.type === "choice-made" && event.stats.peronism >= PERON_HANDS_PERONISM,
+        description: "Para la biblioteca. Las originales siguen sin aparecer.",
+        id:          "manos-de-peron",
+        name:        "Estatua de las manos de Perón",
         on:          "choice-made",
     },
     {

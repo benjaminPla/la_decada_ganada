@@ -10,13 +10,15 @@ const COLORS = {
     casing:     0x2a2622,
     casingEdge: 0x14100e,
     knob:       0x6e625a,
+    nook:       0x1e1410,
+    spines:     [0x5a2a22, 0x2a3a4a, 0x4a4a2a, 0x6a4a2a],
     stripe:     0x342824,
     wall:       0x3b2e2a,
     wood:       0x5a3a24,
     woodDark:   0x3e2818,
 } as const;
 
-// bare wall: objects are mounted by the caller, and the TV too so it can switch channels
+// wall and shelf: objects are mounted by the caller, and the TV too so it can switch channels
 export function drawRoom(scene: Phaser.Scene) {
     const { width } = scene.scale;
     const { baseboard, stripe } = LAYOUT.wall;
@@ -29,12 +31,36 @@ export function drawRoom(scene: Phaser.Scene) {
         g.fillRect(x, 0, stripe.width, floorY);
     }
     g.fillStyle(COLORS.baseboard).fillRect(0, floorY - baseboard, width, baseboard);
+    drawShelf(g);
 
     return g;
 }
 
+// low shelf under the TV: two rows of nooks, filler books in the left ones, objects go in the rest
+function drawShelf(g: Phaser.GameObjects.Graphics) {
+    const { board, columns, height, width, x, y } = LAYOUT.shelf;
+    const nookWidth = (width - board * (columns + 1)) / columns;
+    const nookHeight = (height - board * 3) / 2;
+
+    g.fillStyle(COLORS.woodDark).fillRect(x, y, width, height);
+    for (let row = 0; row < 2; row++) {
+        const top = y + board + row * (nookHeight + board);
+        for (let col = 0; col < columns; col++) {
+            const left = x + board + col * (nookWidth + board);
+            g.fillStyle(COLORS.nook).fillRect(left, top, nookWidth, nookHeight);
+            if (col === 0) {
+                for (let i = 0; i < 6; i++) {
+                    const tall = nookHeight - 14 - (i % 3) * 8;
+                    g.fillStyle(COLORS.spines[(i + row) % COLORS.spines.length]).fillRect(left + 10 + i * 18, top + nookHeight - tall, 14, tall);
+                }
+            }
+        }
+    }
+    g.fillStyle(COLORS.wood).fillRect(x, y, width, board);
+}
+
 export function drawTv(scene: Phaser.Scene, channel: TvChannel) {
-    const { antenna, cabinet, casing, flicker, panel, scanline, screen } = LAYOUT.tv;
+    const { antenna, casing, flicker, panel, place, scanline, screen } = LAYOUT.tv;
     const spill = scene.add.graphics();
     const g = scene.add.graphics();
     const centerX = casing.x + (casing.width - panel.width) / 2;
@@ -45,12 +71,10 @@ export function drawTv(scene: Phaser.Scene, channel: TvChannel) {
         screen.height,
     );
 
-    // ---- antenna, cabinet, casing
+    // ---- antenna, casing
     g.lineStyle(4, COLORS.casingEdge)
         .lineBetween(centerX, casing.y, centerX - antenna, casing.y - antenna)
         .lineBetween(centerX, casing.y, centerX + antenna, casing.y - antenna);
-    g.fillStyle(COLORS.woodDark).fillRect(cabinet.x, cabinet.y, cabinet.width, cabinet.height);
-    g.fillStyle(COLORS.wood).fillRect(cabinet.x + 8, cabinet.y + 8, cabinet.width - 16, cabinet.height - 16);
     g.fillStyle(COLORS.casingEdge).fillRoundedRect(casing.x - 4, casing.y - 4, casing.width + 8, casing.height + 8, casing.radius);
     g.fillStyle(COLORS.casing).fillRoundedRect(casing.x, casing.y, casing.width, casing.height, casing.radius);
 
@@ -70,7 +94,8 @@ export function drawTv(scene: Phaser.Scene, channel: TvChannel) {
     }
     const glow = scene.add.rectangle(s.centerX, s.centerY, s.width, s.height);
     scene.tweens.add({ alpha: 0.5, duration: flicker, repeat: -1, targets: glow, yoyo: true });
-    const container = scene.add.container(0, 0, [spill, g, content, crt, glow]);
+    // drawn at full size, then shrunk to sit on the shelf
+    const container = scene.add.container(place.x, place.y, [spill, g, content, crt, glow]).setScale(place.scale);
 
     let current: TvChannel | null = null;
     let ticker: Phaser.Time.TimerEvent | null = null;

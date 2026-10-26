@@ -2,8 +2,8 @@ import { LAYOUT } from "./layout";
 import Phaser from "phaser";
 import { type PlaceId, drawPalestineFlag } from "./places";
 import { THEME, textStyle, toCss } from "../../theme";
-import { UNLOCK_EVENT, isUnlocked } from "../../progress";
-import type { Unlockable, UnlockableId } from "../../progress/unlockables";
+import type { UnlockableId } from "../../progress/unlockables";
+import { isUnlocked } from "../../progress";
 
 // maps a real color to what gets painted: itself when unlocked, the silhouette when locked
 type Paint = (color: number) => number;
@@ -14,6 +14,10 @@ type PlaceObject = {
 };
 
 const COLORS = {
+    bronze:     0x9a7a3a,
+    bronzeDark: 0x6a5228,
+    capital:    0xa8201a,
+    gold:       0xd8b048,
     pin:        0xc81828,
     poster:     0xd8cdb0,
     posterInk:  0x1f3a6b,
@@ -24,30 +28,18 @@ const COLORS = {
 const SILHOUETTE_ALPHA = 0.28;
 
 const OBJECTS: Record<UnlockableId, PlaceObject> = {
-    "bandera-palestina":     { draw: drawWallFlag, place: "room" },
-    "consolador-arcoiris":   { draw: drawDildo,    place: "bathroom" },
-    "poster-vamos-a-volver": { draw: drawPoster,   place: "room" },
+    "bandera-palestina":     { draw: drawWallFlag,   place: "room" },
+    "consolador-arcoiris":   { draw: drawDildo,      place: "bathroom" },
+    "libro-de-marx":         { draw: drawMarx,       place: "room" },
+    "manos-de-peron":        { draw: drawPeronHands, place: "room" },
+    "poster-vamos-a-volver": { draw: drawPoster,     place: "room" },
 };
 
-// draws the place's objects (locked ones as silhouettes) and swaps them in when unlocked mid-run
+// locked objects show as silhouettes; an unlock shows up on the next run
 export function mountObjects(scene: Phaser.Scene, place: PlaceId, parent: Phaser.GameObjects.Container) {
-    const mounted = new Map<UnlockableId, Phaser.GameObjects.Container>();
-    const mount = (id: UnlockableId) => {
-        mounted.get(id)?.destroy();
-        const container = drawObject(scene, id);
-        parent.add(container);
-        mounted.set(id, container);
-    };
-    const ids = (Object.keys(OBJECTS) as UnlockableId[]).filter((id) => OBJECTS[id].place === place);
-    ids.forEach(mount);
-
-    const onUnlock = ({ id }: Unlockable) => {
-        if (ids.includes(id as UnlockableId)) {
-            mount(id as UnlockableId);
-        }
-    };
-    scene.game.events.on(UNLOCK_EVENT, onUnlock);
-    scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => scene.game.events.off(UNLOCK_EVENT, onUnlock));
+    (Object.keys(OBJECTS) as UnlockableId[])
+        .filter((id) => OBJECTS[id].place === place)
+        .forEach((id) => parent.add(drawObject(scene, id)));
 }
 
 function drawObject(scene: Phaser.Scene, id: UnlockableId) {
@@ -79,6 +71,34 @@ function drawPoster(scene: Phaser.Scene, g: Phaser.GameObjects.Graphics, paint: 
             color: toCss(COLORS.posterInk),
         }).setOrigin(0.5),
     ];
+}
+
+// «El Capital», cover out, never opened
+function drawMarx(scene: Phaser.Scene, g: Phaser.GameObjects.Graphics, paint: Paint, locked: boolean) {
+    const { x, y } = LAYOUT.marx;
+    const width = 56;
+    const height = 74;
+
+    g.fillStyle(paint(COLORS.capital)).fillRect(x, y - height, width, height);
+    g.fillStyle(paint(COLORS.gold)).fillRect(x + 4, y - height + 6, width - 8, 3).fillRect(x + 4, y - 9, width - 8, 3);
+    if (locked) {
+        return [];
+    }
+
+    return [scene.add.text(x + width / 2, y - height / 2, "MARX", { ...textStyle("ui", "sm"), color: toCss(COLORS.gold) }).setOrigin(0.5)];
+}
+
+// two raised arms on a pedestal: the hands nobody ever found
+function drawPeronHands(_scene: Phaser.Scene, g: Phaser.GameObjects.Graphics, paint: Paint) {
+    const { x, y } = LAYOUT.peronHands;
+    const v = (px: number, py: number) => new Phaser.Math.Vector2(px, py);
+
+    g.fillStyle(paint(COLORS.bronzeDark)).fillRect(x - 28, y - 14, 56, 14);
+    g.fillStyle(paint(COLORS.bronze));
+    g.fillPoints([v(x - 6, y - 14), v(x - 30, y - 56), v(x - 22, y - 60), v(x + 2, y - 18)], true);
+    g.fillPoints([v(x + 6, y - 14), v(x + 30, y - 56), v(x + 22, y - 60), v(x - 2, y - 18)], true);
+    g.fillRect(x - 36, y - 72, 16, 16).fillRect(x + 20, y - 72, 16, 16);
+    return [];
 }
 
 // pinned flat to the wall, behind the player's head

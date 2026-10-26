@@ -229,9 +229,9 @@ export const STORY: Record<NodeId, StoryNode> = {
     "palestine": {
         choices: {
             options: [
-                { effects: { palestine: 2 },          id: "kufiya",        label: "Ponerte una kufiya", next: "activism" },
-                { effects: { lgbt: 2, palestine: 2 }, id: "march-all",     label: "Marchar por todo",   next: "activism" },
-                { effects: { anger: 1 },              id: "back-to-milei", label: "Volver a Mileón",    next: "russia-2" },
+                { effects: { communism: 1, palestine: 2 },          id: "kufiya",        label: "Ponerte una kufiya", next: "activism" },
+                { effects: { communism: 1, lgbt: 2, palestine: 2 }, id: "march-all",     label: "Marchar por todo",   next: "activism" },
+                { effects: { anger: 1 },                            id: "back-to-milei", label: "Volver a Mileón",    next: "russia-2" },
             ],
             prompt: { expression: Furious, speaker: player, text: "No alcanza. Tengo que hacer más." },
         },
