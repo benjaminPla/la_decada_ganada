@@ -8,7 +8,7 @@ import { THEME, textStyle } from "../../theme";
 import { type MenuData, View } from "./types";
 import { UNLOCKABLES } from "../../progress/unlockables";
 import { VOLUME_STEP, changeVolume, getSetting } from "../../settings";
-import { getProgress } from "../../progress";
+import { getCompletion, getProgress } from "../../progress";
 import { playMusic } from "../../audio";
 
 export class Menu extends Phaser.Scene {
@@ -74,26 +74,16 @@ export class Menu extends Phaser.Scene {
     }
 
     private showCollection() {
-        const { buttons, collection } = LAYOUT;
+        const { collection } = LAYOUT;
         const { endings, unlocked } = getProgress();
-        const top = this.scale.height * buttons.y;
-        const found = UNLOCKABLES.filter(({ id }) => unlocked.includes(id)).length;
+        const top = this.scale.height * collection.y;
 
         this.addTitle("Colección");
-        this.content.add(this.add.text(0, top, `Objetos ${found}/${UNLOCKABLES.length}`, textStyle("ui", "md", "accent")).setOrigin(0.5));
-        UNLOCKABLES.forEach(({ description, id, name }, i) => {
-            const y = top + (i + 1) * collection.rowHeight;
-            const open = unlocked.includes(id);
-            this.content.add([
-                this.add.text(0, y, open ? name : "???", textStyle("ui", "md", open ? "text" : "textMuted")).setOrigin(0.5, 1),
-                this.add.text(0, y, open ? description : "Seguí jugando", textStyle("ui", "sm", "textMuted")).setOrigin(0.5, 0),
-            ]);
-        });
-
-        const endingsY = top + UNLOCKABLES.length * collection.rowHeight + collection.section;
-        const reached = ENDINGS.filter(({ id }) => endings.includes(id)).length;
-        const endingsLabel = ENDINGS.length > 0 ? `Finales ${reached}/${ENDINGS.length}` : "Finales: próximamente";
-        this.content.add(this.add.text(0, endingsY, endingsLabel, textStyle("ui", "md", "accent")).setOrigin(0.5));
+        this.content.add(this.add.text(0, top, `Completado: ${Math.floor(getCompletion() * 100)}%`, textStyle("ui", "lg")).setOrigin(0.5));
+        this.addColumn(-collection.column, top, "Objetos", UNLOCKABLES.map(({ description, id, name }) =>
+            unlocked.includes(id) ? { detail: description, name } : null));
+        this.addColumn(collection.column, top, "Finales", ENDINGS.map(({ id, name }) =>
+            endings.includes(id) ? { detail: "", name } : null));
         this.addBack();
     }
 
@@ -207,6 +197,21 @@ export class Menu extends Phaser.Scene {
         const button = new Button(this, 0, y, text, onClick);
         this.content.add(button);
         return button;
+    }
+
+    // one header plus a row per entry; null rows are still locked
+    private addColumn(x: number, top: number, label: string, rows: ({ detail: string; name: string } | null)[]) {
+        const { collection } = LAYOUT;
+        const found = rows.filter(Boolean).length;
+
+        this.content.add(this.add.text(x, top + collection.header, `${label} ${found}/${rows.length}`, textStyle("ui", "md", "accent")).setOrigin(0.5));
+        rows.forEach((row, i) => {
+            const y = top + collection.header + (i + 1) * collection.rowHeight;
+            this.content.add([
+                this.add.text(x, y, row?.name ?? "???", textStyle("ui", "md", row ? "text" : "textMuted")).setOrigin(0.5, 1),
+                this.add.text(x, y, row ? row.detail : "Seguí jugando", textStyle("ui", "sm", "textMuted")).setOrigin(0.5, 0),
+            ]);
+        });
     }
 
     private addTitle(text: string) {

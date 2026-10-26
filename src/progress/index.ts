@@ -22,6 +22,13 @@ const STORAGE_KEY = "la-decada-ganada:progress";
 
 let progress = load();
 
+// share of objects and endings found, 0 to 1; only counts ids that still exist
+export function getCompletion() {
+    const found = UNLOCKABLES.filter(({ id }) => progress.unlocked.includes(id)).length
+        + ENDINGS.filter(({ id }) => progress.endings.includes(id)).length;
+    return found / (UNLOCKABLES.length + ENDINGS.length);
+}
+
 export function getProgress(): Readonly<Progress> {
     return progress;
 }

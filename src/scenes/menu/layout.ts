@@ -10,8 +10,10 @@ export const LAYOUT = {
         y:   0.43,
     },
     collection: {
-        rowHeight: 56,
-        section:   THEME.spacing.xl,
+        column:    300,
+        header:    44,
+        rowHeight: 48,
+        y:         0.37,
     },
     controls: {
         gap:       THEME.spacing.md,
