@@ -16,7 +16,7 @@ import { openPauseMenu } from "../menu/pause";
 import { playMusic, playSfx } from "../../audio";
 import { track } from "../../progress";
 
-export class Intro extends Phaser.Scene {
+export class Story extends Phaser.Scene {
     private death:   Death | null = null;
     private dialog!: DialogBox;
     private place!:  PlaceId;
@@ -27,7 +27,7 @@ export class Intro extends Phaser.Scene {
     private tv!:     ReturnType<typeof drawTv>;
 
     constructor() {
-        super("Intro");
+        super("Story");
     }
 
     create() {
