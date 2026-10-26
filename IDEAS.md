@@ -1,67 +1,69 @@
 # Ideas
 
+## Intro
+
+Opening cinematic (`src/scenes/intro/`): the therapy session with Lic. Graciela, then home to the TV.
+
+- [ ] Only play it on the first run (or after a new ending)
+
+## Cinematics
+
+Rule: every figure is a silhouette (`SILHOUETTE` in `src/ui/cinematic.ts`), the player and the killers alike. Only the background and the animation change.
+
 ## Objects
 
-Entries in `src/progress/unlockables.ts`: an event (`on`) plus a `condition`.
+Entries in `src/progress/unlockables.ts`, drawings and places in `src/scenes/story/objects.ts`. Locked ones show as a dark silhouette; an unlock shows up on the next run, and the toast says so.
 
-- **Wall:** [x] Póster «Vamos a volver» (first run) · [x] Bandera de Palestina (palestine ≥ 3) · [ ] Bandera LGBT
-- **Bathroom:** [x] Consolador arcoíris (lgbt ≥ 3), on a shelf in the home bathroom
-
-Each object has a drawing and a place in `src/scenes/intro/objects.ts`: locked ones show as a dark silhouette, and an unlock mid-run swaps it in on the spot.
-- **Furniture (biblioteca):** [ ] Libro de Marx · [ ] Estatua de las manos de Perón. Not unlockable itself: appears with whichever of its objects unlocks first (objects declare `furniture: "shelf"`).
-- **Mate:** [ ] Mate → then stickers: [ ] Maradona · [ ] Abuelas de Plaza de Marzo. Stickers require the mate: `condition: ({ unlocked }) => unlocked.includes("mate")`.
-- **Body:** [ ] Tatuaje de Malvinas
+- **Wall:** [ ] Bandera LGBT
+- **Shelf under the TV:** empty bottom nooks for more objects
+- **Mate:** [ ] Mate → then stickers: [ ] Maradona · [ ] Abuelas de Plaza de Marzo · [ ] Malvinas. Stickers require the mate: `condition: ({ unlocked }) => unlocked.includes("mate")`.
 
 ## Endings
 
-Rule: **you always die on the toilet**, sitting and scrolling the news (always some right-wing win somewhere). Every ending is the same death; what changes is how you got there. Entries in `src/progress/endings.ts`, reached from story nodes in `src/scenes/intro/script.ts`.
+Rule: **you always die on the toilet**, sitting and scrolling the news (always some right-wing win somewhere). Every ending is the same death; what changes is how you got there. Entries in `src/progress/endings.ts`, reached from story nodes in `src/scenes/story/script.ts`.
 
-- [x] **Every ending gets a pixel-art cinematic** (same style as the room and the player): a few animated frames of the death before the "FINAL DESBLOQUEADO" toast. Could be a scene that takes an ending id and plays its frames.
-
-- [x] **Troll del Kremlin:** C6N spins good news as bad → you rage-post on Y → you go viral → Russia pays you to post → TN exposes the troll network → a Siberian hitman gets you on the toilet.
+- **Troll del Kremlin:**
   - [ ] Follower counter that grows on screen while posting.
   - [ ] Phone / Y app scene for the posting part.
-  - [x] Make the "Rechazar Rusia" choice matter: Russia asks three times (20 USD, 200 USD, Sochi); caught only if fame + money ≥ 7, with escapes (fueros, Uruguay).
-  - [x] Cinematic (`death-home`): sitting sideways scrolling right-wing news, the hitman walks in, aims, bang, blackout.
-- [x] **Vigilia en San José 1111:** a flow where you go camp outside Cristina's house arrest, waiting for her to come out on the balcony. Days of vigil, no bathroom but the chemical ones: she finally waves, the crowd jumps, and the chemical toilet you're in tips over.
-  - [x] Cinematic (`death-chemical`): cut-away chemical toilet, the crowd jumps, the screen shakes, it tips over.
-- [x] **Flotilla de la Libertad:** tweeting for Palestine + kufiya (communism ≥ 5) → Greta Thunbarco invites you to the Gaza flotilla → Greta gets deported first class, you get through → you unfurl the pride flag and the pañuelo verde → hiding in the only bathroom in the neighbourhood.
-  - [x] Cinematic (`death-gaza`): same sitting shot in a sick brown bathroom, armed silhouettes walk in, burst, blackout.
 - [ ] Endings for the "Continuará..." branches: concejal (political offer), fueros, Uruguay, quiet troll, independent.
 - [ ] Next endings: one per first choice (tweet, Cristina), plus mixes.
+- [ ] More paths into the San José vigil (only one reaches it now).
 
 ## Places
 
-`PlaceId` in `src/scenes/intro/places.ts`; story lines set `place` and it sticks, like `expression`. The room is built up front, the rest on first visit.
+`PlaceId` in `src/scenes/story/places.ts`; story lines set `place` and it sticks, like `expression`.
 
-- [x] room (default) · boat (with Greta) · gaza · bathroom (home, with its objects) · gaza-bathroom · san-jose (balcony, crowd, chemical toilets) · colonia (Uruguay escape)
 - [ ] Concejo for the councillor branch
 
 ## Sounds
 
-Generated with a Python stdlib script (no packages). Ids in `SFX` (`src/audio.ts`); story lines play one with `sfx`.
-
-- burst (rifles) · click (buttons) · coins (Russian money) · crash (chemical toilet) · crowd (San José) · gunshot (the hitman) · knock (the door) · notify (Y posts, Vladimir's DMs) · static (channel change) · unlock (toasts) · waves (boat, Buquebus)
+Generated with a Python stdlib script (no packages). Ids in `SFX` (`src/audio.ts`); story lines play one with `sfx`. Toasts play `unlock` for objects and `ending` for endings.
 
 ## Stats
 
-Hidden per-run values (`Stats` in `src/scenes/intro/types.ts`). Choices add `effects`; options with `when` are hidden unless they pass; nodes with `route` branch on them. Thresholds live at the top of `src/scenes/intro/script.ts`.
+Hidden per-run values (`Stats` in `src/stats.ts`). Choices add `effects`; options with `when` are hidden unless they pass; nodes with `route` branch on them. Thresholds live at the top of `src/scenes/story/script.ts` and `src/progress/unlockables.ts`.
 
 - anger: C6N, raging → unlocks «EN MAYÚSCULAS, 4 AM»
-- communism: Palestine → unused yet (Libro de Marx?)
-- lgbt: «Marchar por todo», boarding the flotilla → ≥ 3 Consolador arcoíris
+- communism: Palestine, kufiya, marching → ≥ 2 El Capital
 - corruption: Russian money, the council seat → unused yet
 - fame: tweeting, rejecting Russia → fame + money ≥ 7 caught; ≥ 7 political offer
+- lgbt: «Marchar por todo», boarding the flotilla → ≥ 3 Consolador arcoíris
 - money: Russian money → ≥ 5 escape to Uruguay
 - palestine: Palestine, kufiya, marching → ≥ 3 Bandera de Palestina; ≥ 5 Greta's flotilla
-- peronism: Cristina → ≥ 3 fueros escape; ≥ 7 San José vigil
+- peronism: Cristina → ≥ 3 fueros escape; ≥ 5 manos de Perón; ≥ 7 San José vigil
 
 ## Player faces
 
-`Expression` in `src/scenes/intro/types.ts`; story lines set `expression` and it sticks until changed. Angry and furious shake.
+`Expression` in `src/scenes/story/types.ts`; story lines set `expression` and it sticks until changed.
 
-- [x] angry · dead · furious · greedy · happy · sad · shocked · smug
 - [ ] relieved (C6N calming him down)
+
+## Mileón art
+
+Pixel art, ultra chad: sideburns (patillas), square jaw and chin, giant smile.
+
+- [ ] **Gigachad portrait:** the meme's black-and-white chiseled profile, but Mileón. For the TV, the news, the intro.
+- [ ] **Riding a lion like a horse:** for some other flow (a rally, the inauguration, the ending of a Mileísta branch). Lion rearing up, Mileón with the chainsaw raised.
 
 ## Mockings
 
