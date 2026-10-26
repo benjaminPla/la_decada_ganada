@@ -7,7 +7,7 @@ export type Settings = {
 };
 
 export const SETTINGS_DEFAULTS: Settings = {
-    muted:  true,
+    muted:  false,
     volume: 0.6,
 };
 

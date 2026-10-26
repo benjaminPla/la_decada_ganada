@@ -9,6 +9,7 @@ import { type MenuData, View } from "./types";
 import { UNLOCKABLES } from "../../progress/unlockables";
 import { VOLUME_STEP, changeVolume, getSetting } from "../../settings";
 import { getProgress } from "../../progress";
+import { playMusic } from "../../audio";
 
 export class Menu extends Phaser.Scene {
     private content!:    Phaser.GameObjects.Container;
@@ -37,6 +38,7 @@ export class Menu extends Phaser.Scene {
             this.input.keyboard!.on(PAUSE_KEY, () => this.resume());
         }
         bindAudioKeys(this);
+        playMusic(this);
 
         const onSettingsChange = () => this.refreshSettings?.();
         this.registry.events.on(Phaser.Data.Events.CHANGE_DATA, onSettingsChange);
