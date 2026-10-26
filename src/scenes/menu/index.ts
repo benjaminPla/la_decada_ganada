@@ -174,7 +174,7 @@ export class Menu extends Phaser.Scene {
             this.resume();
             return;
         }
-        this.scene.start("Story");
+        this.scene.start("Intro");
     }
 
     private resume() {

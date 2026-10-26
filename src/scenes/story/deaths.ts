@@ -1,5 +1,6 @@
 import { DialogBox } from "../../ui/dialogBox";
 import Phaser from "phaser";
+import { SILHOUETTE, steps } from "../../ui/cinematic";
 
 export type DeathId = "death-chemical" | "death-gaza" | "death-home";
 
@@ -20,26 +21,23 @@ type Figure = {
 };
 
 const COLORS = {
-    blood:        0x4a0808,
-    cabinDark:    0x0c1e40,
-    door:         0x2a2420,
-    doorGap:      0x050505,
-    flash:        0xfff4c0,
-    gazaFloor:    0x24190d,
-    gazaStain:    0x2a1e10,
-    gazaTint:     0x5a1a10,
-    gazaWall:     0x3a2a18,
-    homeFloor:    0x141a1a,
-    homeGrout:    0x172020,
-    homeWall:     0x1f2a2a,
-    light:        0x8a7a3a,
-    night:        0x0e1428,
-    screen:       0x9fd0ff,
-    shadow:       0x0b0b0b,
-    shadowGrey:   0x1e1e1e,
+    blood:     0x4a0808,
+    cabinDark: 0x0c1e40,
+    door:      0x2a2420,
+    doorGap:   0x050505,
+    flash:     0xfff4c0,
+    gazaFloor: 0x24190d,
+    gazaStain: 0x2a1e10,
+    gazaTint:  0x5a1a10,
+    gazaWall:  0x3a2a18,
+    homeFloor: 0x141a1a,
+    homeGrout: 0x172020,
+    homeWall:  0x1f2a2a,
+    light:     0x8a7a3a,
+    night:     0x0e1428,
+    screen:    0x9fd0ff,
 } as const;
 
-const FRAME = 140;
 const TOILET_X = 960;
 
 export function isDeath(id: string): id is DeathId {
@@ -58,25 +56,6 @@ function floorY(scene: Phaser.Scene) {
     return scene.scale.height - DialogBox.HEIGHT - 50;
 }
 
-// low frame rate on purpose: n steps, one every FRAME ms
-function steps(scene: Phaser.Scene, count: number, onStep: (i: number) => void, onDone?: () => void) {
-    if (count <= 0) {
-        onDone?.();
-        return;
-    }
-    let i = 0;
-    scene.time.addEvent({
-        callback: () => {
-            onStep(i);
-            if (++i === count) {
-                onDone?.();
-            }
-        },
-        delay:  FRAME,
-        repeat: count - 1,
-    });
-}
-
 // ---- shared: the player sitting sideways, facing left; a silhouette lit only by the phone
 
 function drawSitter(scene: Phaser.Scene, x: number, seat: number) {
@@ -84,7 +63,7 @@ function drawSitter(scene: Phaser.Scene, x: number, seat: number) {
     const v = (px: number, py: number) => new Phaser.Math.Vector2(px, py);
 
     g.fillStyle(COLORS.screen, 0.12).fillCircle(-100, -150, 70);
-    g.fillStyle(COLORS.shadow);
+    g.fillStyle(SILHOUETTE.dark);
     g.fillRect(-150, 85, 50, 15).fillRect(-140, 10, 40, 78).fillRect(-135, -18, 130, 30);
     g.fillPoints([v(-40, -120), v(25, -130), v(30, -10), v(-20, -10)], true);
     g.fillRect(-32, -142, 24, 18).fillRect(-55, -200, 56, 62).fillRect(-62, -182, 30, 10);
@@ -98,14 +77,14 @@ function drawSitter(scene: Phaser.Scene, x: number, seat: number) {
 
 function drawToilet(g: Phaser.GameObjects.Graphics, floor: number) {
     const x = TOILET_X;
-    g.fillStyle(COLORS.shadow);
+    g.fillStyle(SILHOUETTE.dark);
     g.fillRect(x + 48, floor - 180, 40, 92).fillRoundedRect(x - 62, floor - 102, 120, 32, 8).fillRect(x - 30, floor - 70, 55, 70);
 }
 
 function drawVignette(g: Phaser.GameObjects.Graphics, width: number, height: number) {
     for (let i = 0; i < 4; i++) {
         const inset = i * 24;
-        g.fillStyle(COLORS.shadow, 0.12)
+        g.fillStyle(SILHOUETTE.dark, 0.12)
             .fillRect(0, 0, width, 24 + inset).fillRect(0, height - 24 - inset, width, 24 + inset)
             .fillRect(0, 0, 24 + inset, height).fillRect(width - 24 - inset, 0, 24 + inset, height);
     }
@@ -117,13 +96,13 @@ function drawRussian(scene: Phaser.Scene, x: number, target: number): Figure {
     const g = scene.add.graphics();
     const redraw = (phase: number, aiming: boolean) => {
         const stride = phase % 2 ? 10 : -10;
-        g.clear().fillStyle(COLORS.shadow);
+        g.clear().fillStyle(SILHOUETTE.dark);
         g.fillRect(-18 + stride, -110, 14, 110).fillRect(4 - stride, -110, 14, 110);
-        g.fillStyle(COLORS.shadowGrey).fillPoints([
+        g.fillStyle(SILHOUETTE.grey).fillPoints([
             new Phaser.Math.Vector2(-30, -232), new Phaser.Math.Vector2(30, -232),
             new Phaser.Math.Vector2(38, -96), new Phaser.Math.Vector2(-38, -96),
         ], true);
-        g.fillStyle(COLORS.shadow).fillRect(-16, -270, 32, 40);
+        g.fillStyle(SILHOUETTE.dark).fillRect(-16, -270, 32, 40);
         g.fillRect(-26, -294, 52, 28).fillRect(-28, -270, 8, 24).fillRect(20, -270, 8, 24);
         if (aiming) {
             g.fillRect(10, -218, 92, 14).fillRect(100, -224, 28, 12).fillRect(100, -214, 10, 18);
@@ -173,7 +152,7 @@ function drawShooting(scene: Phaser.Scene, home: boolean): Death {
         g.fillStyle(COLORS.gazaStain).fillEllipse(420, 140, 220, 90).fillEllipse(760, 320, 160, 120).fillEllipse(1180, 90, 200, 70);
     }
     g.fillStyle(home ? COLORS.homeFloor : COLORS.gazaFloor).fillRect(0, floor, width, height - floor);
-    g.lineStyle(2, COLORS.shadow).lineBetween(620, 0, 620, 60);
+    g.lineStyle(2, SILHOUETTE.dark).lineBetween(620, 0, 620, 60);
     g.fillStyle(COLORS.light).fillCircle(620, 70, 10);
     g.fillStyle(COLORS.light, 0.06).fillCircle(620, 70, 260);
     drawToilet(g, floor);
@@ -193,10 +172,10 @@ function drawShooting(scene: Phaser.Scene, home: boolean): Death {
     const killers = home
         ? [drawRussian(scene, -80, 600)]
         : [
-            drawMilitant(scene, -80, 380, COLORS.shadowGrey),
-            drawMilitant(scene, -160, 480, COLORS.shadow),
-            drawMilitant(scene, -240, 560, COLORS.shadowGrey),
-            drawMilitant(scene, -320, 660, COLORS.shadow),
+            drawMilitant(scene, -80, 380, SILHOUETTE.grey),
+            drawMilitant(scene, -160, 480, SILHOUETTE.dark),
+            drawMilitant(scene, -240, 560, SILHOUETTE.grey),
+            drawMilitant(scene, -320, 660, SILHOUETTE.dark),
         ];
 
     const over = scene.add.graphics();
@@ -263,7 +242,7 @@ function drawChemical(scene: Phaser.Scene): Death {
     g.fillStyle(COLORS.night).fillRect(0, 0, width, height);
     g.fillStyle(COLORS.light, 0.5).fillRect(80, 40, 90, 60);
     g.fillStyle(COLORS.light, 0.08).fillCircle(125, 70, 180);
-    g.fillStyle(COLORS.shadow).fillRect(0, floor, width, height - floor);
+    g.fillStyle(SILHOUETTE.dark).fillRect(0, floor, width, height - floor);
 
     const crowd = scene.add.graphics();
     const drawCrowd = (phase: number) => {
@@ -272,7 +251,7 @@ function drawChemical(scene: Phaser.Scene): Death {
             const x = 30 + i * 46;
             const jump = (i + phase) % 2 ? 22 : 0;
             const base = floor - jump;
-            crowd.fillStyle(i % 2 ? COLORS.shadow : COLORS.shadowGrey);
+            crowd.fillStyle(i % 2 ? SILHOUETTE.dark : SILHOUETTE.grey);
             crowd.fillRect(x - 14, base - 150, 28, 150).fillRect(x - 11, base - 178, 22, 26);
             crowd.fillRect(x - 20, base - 210, 6, 70).fillRect(x + 14, base - 210, 6, 70);
             if (i % 5 === 2) {
@@ -285,7 +264,7 @@ function drawChemical(scene: Phaser.Scene): Death {
     // ---- cut-away cabin, pivoting on its bottom-left corner so it tips over onto the crowd
     const cabin = scene.add.graphics();
     cabin.fillStyle(COLORS.cabinDark).fillRect(0, -360, 300, 360);
-    cabin.fillStyle(COLORS.shadow).fillRect(-10, -380, 320, 22).fillRect(-10, -360, 12, 360).fillRect(298, -360, 12, 360);
+    cabin.fillStyle(SILHOUETTE.dark).fillRect(-10, -380, 320, 22).fillRect(-10, -360, 12, 360).fillRect(298, -360, 12, 360);
     cabin.fillRect(150, -100, 140, 100);
     const sitter = drawSitter(scene, 210, -100);
     const tipping = scene.add.container(790, floor, [cabin, sitter]);
