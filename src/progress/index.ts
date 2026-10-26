@@ -1,10 +1,11 @@
 import { ENDINGS, type EndingId } from "./endings";
 import Phaser from "phaser";
+import type { Stats } from "../stats";
 import { UNLOCKABLES, type Unlockable, type UnlockableId } from "./unlockables";
 import { readJson, writeJson } from "../storage";
 
 export type GameEvent =
-    | { choice: string; type: "choice-made" }
+    | { choice: string; stats: Readonly<Stats>; type: "choice-made" }
     | { ending: EndingId; type: "ending-reached" }
     | { type: "run-started" };
 

@@ -1,23 +1,22 @@
 import { DialogBox } from "../../ui/dialogBox";
 import { LAYOUT } from "./layout";
 import Phaser from "phaser";
-import { THEME, textStyle, toCss } from "../../theme";
 import type { TvChannel } from "./channels";
-import { isUnlocked } from "../../progress";
+import { playSfx } from "../../audio";
+import { textStyle, toCss } from "../../theme";
 
 const COLORS = {
     baseboard:  0x241a16,
     casing:     0x2a2622,
     casingEdge: 0x14100e,
     knob:       0x6e625a,
-    poster:     0xd8cdb0,
-    posterInk:  0x1f3a6b,
     stripe:     0x342824,
     wall:       0x3b2e2a,
     wood:       0x5a3a24,
     woodDark:   0x3e2818,
 } as const;
 
+// bare wall: objects are mounted by the caller, and the TV too so it can switch channels
 export function drawRoom(scene: Phaser.Scene) {
     const { width } = scene.scale;
     const { baseboard, stripe } = LAYOUT.wall;
@@ -31,9 +30,7 @@ export function drawRoom(scene: Phaser.Scene) {
     }
     g.fillStyle(COLORS.baseboard).fillRect(0, floorY - baseboard, width, baseboard);
 
-    if (isUnlocked("poster-vamos-a-volver")) {
-        drawPoster(scene, g);
-    }
+    return g;
 }
 
 export function drawTv(scene: Phaser.Scene, channel: TvChannel) {
@@ -73,9 +70,18 @@ export function drawTv(scene: Phaser.Scene, channel: TvChannel) {
     }
     const glow = scene.add.rectangle(s.centerX, s.centerY, s.width, s.height);
     scene.tweens.add({ alpha: 0.5, duration: flicker, repeat: -1, targets: glow, yoyo: true });
+    const container = scene.add.container(0, 0, [spill, g, content, crt, glow]);
 
+    let current: TvChannel | null = null;
     let ticker: Phaser.Time.TimerEvent | null = null;
     const setChannel = (next: TvChannel) => {
+        if (next === current) {
+            return;
+        }
+        if (current) {
+            playSfx(scene, "static");
+        }
+        current = next;
         spill.clear().fillStyle(next.color, 0.05).fillEllipse(s.centerX, s.centerY, casing.width * 1.6, casing.height * 1.5);
         glow.setFillStyle(next.color, 0.03);
         ticker?.remove();
@@ -84,7 +90,7 @@ export function drawTv(scene: Phaser.Scene, channel: TvChannel) {
     };
     setChannel(channel);
 
-    return { setChannel };
+    return { container, setChannel };
 }
 
 function drawChannel(scene: Phaser.Scene, content: Phaser.GameObjects.Container, s: Phaser.Geom.Rectangle, channel: TvChannel) {
@@ -125,20 +131,4 @@ function drawChannel(scene: Phaser.Scene, content: Phaser.GameObjects.Container,
         delay:    ticker,
         loop:     true,
     });
-}
-
-function drawPoster(scene: Phaser.Scene, g: Phaser.GameObjects.Graphics) {
-    const { height, width, x, y } = LAYOUT.poster;
-    const centerX = x + width / 2;
-
-    g.fillStyle(COLORS.poster).fillRect(x, y, width, height);
-    g.fillStyle(THEME.colors.accent).fillRect(x, y, width, 20).fillRect(x, y + height - 20, width, 20);
-    g.fillStyle(THEME.colors.ink).fillCircle(centerX, y + 6, 5);
-
-    scene.add.text(centerX, y + 64, "CFK", { ...textStyle("ui", "xl"), color: toCss(COLORS.posterInk) }).setOrigin(0.5);
-    scene.add.text(centerX, y + 120, "VAMOS\nA VOLVER", {
-        ...textStyle("ui", "sm"),
-        align: "center",
-        color: toCss(COLORS.posterInk),
-    }).setOrigin(0.5);
 }

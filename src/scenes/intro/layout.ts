@@ -1,4 +1,15 @@
 export const LAYOUT = {
+    dildo: {
+        band: 10,
+        x:    530,
+        y:    210,
+    },
+    flag: {
+        height: 132,
+        width:  220,
+        x:      1030,
+        y:      64,
+    },
     poster: {
         height: 176,
         width:  136,
