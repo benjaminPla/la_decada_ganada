@@ -2,7 +2,7 @@ import Phaser from "phaser";
 
 const MUSIC_MIX = 0.5;
 
-export const SFX = ["burst", "click", "coins", "crash", "crowd", "gunshot", "knock", "notify", "static", "unlock", "waves"] as const;
+export const SFX = ["burst", "click", "coins", "crash", "crowd", "ending", "gunshot", "knock", "notify", "static", "unlock", "waves"] as const;
 
 export type SfxId = typeof SFX[number];
 

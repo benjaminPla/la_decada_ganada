@@ -4,10 +4,11 @@ import { THEME, textStyle } from "../../theme";
 import type { Ending } from "../../progress/endings";
 import { ENDING_EVENT, UNLOCK_EVENT } from "../../progress";
 import type { Unlockable } from "../../progress/unlockables";
-import { playSfx } from "../../audio";
+import { type SfxId, playSfx } from "../../audio";
 
 type Toast = {
     name:  string;
+    sfx:   SfxId;
     title: string;
 };
 
@@ -21,8 +22,9 @@ export class Notifications extends Phaser.Scene {
     }
 
     create() {
-        const onEnding = ({ name }: Ending) => this.enqueue({ name, title: "FINAL DESBLOQUEADO" });
-        const onUnlock = ({ name }: Unlockable) => this.enqueue({ name, title: "OBJETO DESBLOQUEADO" });
+        const onEnding = ({ name }: Ending) => this.enqueue({ name, sfx: "ending", title: "FINAL DESBLOQUEADO" });
+        // objects only appear when a run starts, so the toast says when to look
+        const onUnlock = ({ name }: Unlockable) => this.enqueue({ name, sfx: "unlock", title: "OBJETO NUEVO · EN LA PRÓXIMA PARTIDA" });
 
         this.game.events.on(ENDING_EVENT, onEnding);
         this.game.events.on(UNLOCK_EVENT, onUnlock);
@@ -33,7 +35,6 @@ export class Notifications extends Phaser.Scene {
     }
 
     private enqueue(toast: Toast) {
-        playSfx(this, "unlock");
         this.queue.push(toast);
         if (!this.showing) {
             this.showNext();
@@ -47,6 +48,7 @@ export class Notifications extends Phaser.Scene {
             return;
         }
 
+        playSfx(this, next.sfx);
         const { border, height, hold, margin, padding, slide, width } = LAYOUT;
         const x = this.scale.width - margin - width;
         const toast = this.add.container(x, -height, [
