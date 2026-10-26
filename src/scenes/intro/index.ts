@@ -1,6 +1,6 @@
 import { CHANNELS } from "./channels";
 import { DialogBox } from "../../ui/dialogBox";
-import { Expression } from "./types";
+import { EMPTY_STATS, Expression, type Stat, type Stats } from "./types";
 import { LAYOUT } from "./layout";
 import { type NodeId, START, STORY, type StoryLine } from "./script";
 import { PAUSE_KEY, bindAudioKeys } from "../../controls";
@@ -16,6 +16,7 @@ export class Intro extends Phaser.Scene {
     private dialog!: DialogBox;
     private player!: Phaser.GameObjects.Image;
     private shake!:  Phaser.Tweens.Tween;
+    private stats!:  Stats;
     private tv!:     ReturnType<typeof drawTv>;
 
     constructor() {
@@ -25,6 +26,7 @@ export class Intro extends Phaser.Scene {
     create() {
         const { player } = LAYOUT;
 
+        this.stats = { ...EMPTY_STATS };
         track(this.game, { type: "run-started" });
         playMusic(this);
         drawRoom(this);
@@ -43,6 +45,10 @@ export class Intro extends Phaser.Scene {
         this.run(START);
     }
 
+    private apply(effects: Partial<Stats> = {}) {
+        (Object.entries(effects) as [Stat, number][]).forEach(([stat, delta]) => { this.stats[stat] += delta });
+    }
+
     // rage shakes; calmer faces stand still
     private setExpression(expression: Expression) {
         const angry = expression === Expression.Angry || expression === Expression.Furious;
@@ -55,7 +61,7 @@ export class Intro extends Phaser.Scene {
         this.player.x = LAYOUT.player.x;
     }
 
-    // walks the story graph: lines, then choices, a next node, or the end of the run
+    // walks the story graph: lines, then choices, the first matching route, a next node, or the end of the run
     private run(id: NodeId) {
         const node = STORY[id];
         if (node.channel) {
@@ -64,17 +70,20 @@ export class Intro extends Phaser.Scene {
 
         this.dialog.say(node.lines, () => {
             if (node.choices) {
-                this.dialog.ask(node.choices.prompt, node.choices.options.map(({ id, label, next }) => ({
+                const options = node.choices.options.filter(({ when }) => !when || when(this.stats));
+                this.dialog.ask(node.choices.prompt, options.map(({ effects, id, label, next }) => ({
                     label,
                     onPick: () => {
                         track(this.game, { choice: id, type: "choice-made" });
+                        this.apply(effects);
                         this.run(next);
                     },
                 })));
                 return;
             }
-            if (node.next) {
-                this.run(node.next);
+            const next = node.route?.find(({ when }) => !when || when(this.stats))?.next ?? node.next;
+            if (next) {
+                this.run(next);
                 return;
             }
             if (node.ending) {
