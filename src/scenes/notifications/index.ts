@@ -4,6 +4,7 @@ import { THEME, textStyle } from "../../theme";
 import type { Ending } from "../../progress/endings";
 import { ENDING_EVENT, UNLOCK_EVENT } from "../../progress";
 import type { Unlockable } from "../../progress/unlockables";
+import { playSfx } from "../../audio";
 
 type Toast = {
     name:  string;
@@ -32,6 +33,7 @@ export class Notifications extends Phaser.Scene {
     }
 
     private enqueue(toast: Toast) {
+        playSfx(this, "unlock");
         this.queue.push(toast);
         if (!this.showing) {
             this.showNext();

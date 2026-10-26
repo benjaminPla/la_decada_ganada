@@ -1,6 +1,7 @@
 import { LAYOUT } from "./layout";
 import Phaser from "phaser";
 import { THEME, textStyle, toCss } from "../../theme";
+import { playSfx } from "../../audio";
 
 export class Button extends Phaser.GameObjects.Container {
     private readonly background: Phaser.GameObjects.Rectangle;
@@ -18,7 +19,10 @@ export class Button extends Phaser.GameObjects.Container {
             .setInteractive({ useHandCursor: true })
             .on(Phaser.Input.Events.POINTER_OUT,  () => this.setHover(false))
             .on(Phaser.Input.Events.POINTER_OVER, () => this.setHover(true))
-            .on(Phaser.Input.Events.POINTER_UP, onClick);
+            .on(Phaser.Input.Events.POINTER_UP, () => {
+                playSfx(scene, "click");
+                onClick();
+            });
 
         scene.add.existing(this);
     }

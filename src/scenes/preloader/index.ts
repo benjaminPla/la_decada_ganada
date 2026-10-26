@@ -1,6 +1,7 @@
 import { LAYOUT } from "./layout";
 import { LOADING_MESSAGES } from "./loadingMessages";
 import Phaser from "phaser";
+import { loadSfx } from "../../audio";
 import { THEME, textStyle } from "../../theme";
 
 export class Preloader extends Phaser.Scene {
@@ -27,6 +28,7 @@ export class Preloader extends Phaser.Scene {
         this.load.on("progress", (value: number) => { fill.width = bar.width * value });
 
         this.load.audio("music", "assets/music/melody.wav");
+        loadSfx(this.load);
     }
 
     create() {
