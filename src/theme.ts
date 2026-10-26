@@ -6,12 +6,10 @@ export const THEME = {
         alert:       0xff6b6b,
         background:  0x281e19,
         ink:         0xc81828,
-        paper:       0xf5f5dc,
         paperBorder: 0x4c3f2f,
         phosphor:    0x6fdc6f,
         surface:     0x1a1310,
         text:        0xffffff,
-        textDark:    0x1a1a1a,
         textMuted:   0x6e625a,
     },
     fontSizes: {
@@ -21,8 +19,7 @@ export const THEME = {
         xl: 40,
     },
     fonts: {
-        document: "special-elite",
-        ui:       "pixelify",
+        ui: "pixelify",
     },
     spacing: {
         lg: 32,

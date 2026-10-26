@@ -27,7 +27,6 @@ export class Preloader extends Phaser.Scene {
         this.load.on("progress", (value: number) => { fill.width = bar.width * value });
 
         this.load.audio("music", "assets/music/melody.wav");
-        this.load.audio("stamp", "assets/sfx/stamp.wav");
     }
 
     create() {

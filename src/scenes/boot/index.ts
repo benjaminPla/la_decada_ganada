@@ -10,7 +10,6 @@ export class Boot extends Phaser.Scene {
         this.load.on("loaderror", (file: Phaser.Loader.File) => console.warn(`Failed to load "${file.key}" from ${file.url}`));
 
         this.load.font("pixelify", "assets/fonts/pixelify-sans/PixelifySans.ttf");
-        this.load.font("special-elite", "assets/fonts/special-elite/SpecialElite.ttf");
         this.load.image("logo", "assets/ui/logo.png");
     }
 
