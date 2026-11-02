@@ -28,6 +28,7 @@ const COLORS = {
 const SILHOUETTE_ALPHA = 0.28;
 
 const OBJECTS: Record<UnlockableId, PlaceObject> = {
+    "bandera-orgullo":       { draw: drawPrideFlag,  place: "room" },
     "bandera-palestina":     { draw: drawWallFlag,   place: "room" },
     "consolador-arcoiris":   { draw: drawDildo,      place: "bathroom" },
     "libro-de-marx":         { draw: drawMarx,       place: "room" },
@@ -109,6 +110,16 @@ function drawWallFlag(_scene: Phaser.Scene, g: Phaser.GameObjects.Graphics, pain
     g.fillStyle(paint(COLORS.pin))
         .fillCircle(x + 6, y + 6, 5).fillCircle(x + width - 6, y + 6, 5)
         .fillCircle(x + 6, y + height - 6, 5).fillCircle(x + width - 6, y + height - 6, 5);
+    return [];
+}
+
+// six stripes, pinned at the corners like the palestine one
+function drawPrideFlag(_scene: Phaser.Scene, g: Phaser.GameObjects.Graphics, paint: Paint) {
+    const { height, width, x, y } = LAYOUT.prideFlag;
+    const band = height / COLORS.rainbow.length;
+
+    COLORS.rainbow.forEach((color, i) => g.fillStyle(paint(color)).fillRect(x, y + i * band, width, band));
+    g.fillStyle(paint(COLORS.pin)).fillCircle(x + 6, y + 6, 5).fillCircle(x + width - 6, y + 6, 5);
     return [];
 }
 

@@ -18,6 +18,12 @@ export const LAYOUT = {
         x: 440,
         y: 420,
     },
+    prideFlag: {
+        height: 108,
+        width:  180,
+        x:      780,
+        y:      80,
+    },
     poster: {
         height: 176,
         width:  136,

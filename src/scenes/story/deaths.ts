@@ -155,6 +155,7 @@ function drawMaximo(scene: Phaser.Scene, x: number, target: number): Figure {
 }
 
 // ---- home and gaza: sitting, the door opens, someone walks in, aims, bang
+// ---- rabia: same home bathroom, nobody comes in; foam, shaking, falls off the seat
 
 function drawShooting(scene: Phaser.Scene, home: boolean): Death {
     const { width } = scene.scale;
@@ -192,6 +193,8 @@ function drawShooting(scene: Phaser.Scene, home: boolean): Death {
     drawDoor(false);
 
     const sitter = drawSitter(scene, TOILET_X, floor - 102);
+    const foam = scene.add.graphics().fillStyle(COLORS.eyes).fillCircle(-66, -168, 7).fillCircle(-74, -160, 5).fillCircle(-62, -156, 6).setVisible(false);
+    sitter.add(foam);
     const killers = home
         ? [drawRussian(scene, -80, 600)]
         : [
@@ -213,6 +216,15 @@ function drawShooting(scene: Phaser.Scene, home: boolean): Death {
 
     const play = (beat: Beat) => {
         switch (beat) {
+            case "shake":
+                foam.setVisible(true);
+                steps(scene, 10, (i) => { sitter.x = TOILET_X + (i % 2 ? 6 : -6) }, () => { sitter.x = TOILET_X });
+                break;
+            case "tip":
+                steps(scene, 4, (i) => { sitter.rotation = -[0.3, 0.7, 1.1, 1.4][i] }, () => {
+                    steps(scene, 4, (i) => blackout.setAlpha((i + 1) / 4));
+                });
+                break;
             case "enter":
                 drawDoor(true);
                 killers.forEach((k) => {

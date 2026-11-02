@@ -8,12 +8,19 @@ export type Unlockable = {
     on:          GameEvent["type"];
 };
 
-const DILDO_LGBT = 3;
 const MARX_COMMUNISM = 2;
 const PALESTINE_FLAG_PALESTINE = 3;
 const PERON_HANDS_PERONISM = 5;
+const PRIDE_FLAG_LGBT = 3;
 
 export const UNLOCKABLES = [
+    {
+        condition:   (_, event) => event.type === "choice-made" && event.stats.lgbt >= PRIDE_FLAG_LGBT,
+        description: "Para el living. Al lado de la de Palestina. Que se arreglen.",
+        id:          "bandera-orgullo",
+        name:        "Bandera del orgullo",
+        on:          "choice-made",
+    },
     {
         condition:   (_, event) => event.type === "choice-made" && event.stats.palestine >= PALESTINE_FLAG_PALESTINE,
         description: "Para el living. Al lado de Cristina.",
@@ -22,7 +29,7 @@ export const UNLOCKABLES = [
         on:          "choice-made",
     },
     {
-        condition:   (_, event) => event.type === "choice-made" && event.stats.lgbt >= DILDO_LGBT,
+        condition:   (_, event) => event.type === "choice-made" && event.choice === "after-party",
         description: "Para el baño. Nadie pregunta.",
         id:          "consolador-arcoiris",
         name:        "Consolador arcoíris",

@@ -10,6 +10,7 @@ import { THEME } from "../../theme";
 
 export type NodeId =
     | "activism"
+    | "after-party"
     | "c6n"
     | "campora"
     | "caught"
@@ -18,15 +19,22 @@ export type NodeId =
     | "cristina-audio"
     | "flotilla"
     | "fueros"
+    | "furros"
+    | "goro"
     | "greta"
+    | "hospital"
     | "independent"
     | "independent-greta"
     | "kremlin"
     | "kremlin-spite"
     | "maximo"
     | "palestine"
+    | "park"
+    | "park-bite"
     | "politics"
     | "quiet"
+    | "rabia"
+    | "rabies-days"
     | "russia-2"
     | "russia-3"
     | "san-jose"
@@ -95,15 +103,17 @@ export type StoryNode = {
 
 export const SPEAKERS = {
     c6n:      { color: THEME.colors.alert,     name: "Víctor Hugo Inmorales (C6N)" },
+    goro:     { color: THEME.colors.accent,    name: "@Goro" },
     greta:    { color: THEME.colors.accent,    name: "Greta Thunbarco" },
     maximo:   { color: THEME.colors.ink,       name: "Máximo" },
     narrator: { color: THEME.colors.textMuted, name: "" },
     paco:     { color: THEME.colors.accent,    name: "Padre Paco" },
+    paulxn:   { color: THEME.colors.phosphor,  name: "Estebxn Paulxn" },
     player:   { color: THEME.colors.text,      name: "Vos" },
     tn:       { color: THEME.colors.phosphor,  name: "TN - Todo Narrativa" },
 } as const satisfies Record<string, Speaker>;
 
-const { c6n, greta, maximo, narrator, paco, player, tn } = SPEAKERS;
+const { c6n, goro, greta, maximo, narrator, paco, paulxn, player, tn } = SPEAKERS;
 const { Angry, Dead, Furious, Greedy, Happy, Sad, Shocked, Smug } = Expression;
 
 // ---- thresholds
@@ -131,6 +141,14 @@ export const STORY: Record<NodeId, StoryNode> = {
             { next: "greta", when: ({ stats: { palestine } }) => palestine >= FLOTILLA_PALESTINE },
             { next: "russia-2" },
         ],
+    },
+    "after-party": {
+        lines: [
+            { expression: Happy, speaker: narrator, text: "Marchás, bailás, perdés el celular y la vergüenza." },
+            { expression: Shocked, speaker: narrator, text: "Te despertás el lunes en un depto de Palermo con nueve desconocidos, una cola de zorro que no es tuya y un recuerdo arcoíris." },
+            { speaker: narrator, text: "Llegás tarde a la juntada, pero llegás." },
+        ],
+        next: "park",
     },
     "c6n": {
         channel: "c6n",
@@ -227,6 +245,33 @@ export const STORY: Record<NodeId, StoryNode> = {
         ],
         next: "campora",
     },
+    "furros": {
+        choices: {
+            options: [
+                { effects: { lgbt: 2 },  id: "pronouns",    label: "Ponerte pronombres en la bio", next: "goro" },
+                { effects: { anger: 1 }, id: "furros-back", label: "Volver a Mileón",              next: "russia-2" },
+            ],
+            prompt: { expression: Happy, speaker: player, text: "¡Me citó un diputado!" },
+        },
+        lines: [
+            { speaker: tn,       text: "ÚLTIMO MOMENTO: Mileón le saca el subsidio a la Primera Convención Furra Federal." },
+            { expression: Shocked, speaker: player, text: "¿Qué es un furro?" },
+            { expression: Furious, sfx: "notify", speaker: narrator, text: "No sabés qué es un furro. A los diez minutos ya tuiteaste cuarenta veces en su defensa." },
+            { speaker: goro,     text: "Gracias por visibilizar, compañere. Los furros también somos pueblo." },
+            { speaker: paulxn,   text: "Necesitamos más aliados como vos." },
+        ],
+    },
+    "goro": {
+        choices: {
+            options: [
+                { doom: "rabia", effects: { lgbt: 1 }, id: "furry-meetup", label: "Ir directo a la juntada",     next: "park" },
+                { doom: "rabia", effects: { lgbt: 2 }, id: "after-party",  label: "Ir a la marcha y a la after", next: "after-party" },
+                { effects: { fame: 1 },                id: "goro-ignore",  label: "Clavarle el visto a Goro",    next: "russia-2" },
+            ],
+            prompt: { expression: Shocked, speaker: player, text: "¿Orejas de qué?" },
+        },
+        lines: [{ sfx: "notify", speaker: goro, text: "Compañere, el sábado es la marcha del orgullo y el domingo hay juntada furra en Parque Centenario. Traé orejas." }],
+    },
     "greta": {
         choices: {
             options: [
@@ -236,6 +281,10 @@ export const STORY: Record<NodeId, StoryNode> = {
             prompt: { expression: Shocked, speaker: player, text: "¿Yo? ¿En un barco?" },
         },
         lines: [{ speaker: narrator, text: "Te escribe Greta Thunbarco: «Zarpamos a Gaza. Traé tu bandera y tu indignación»." }],
+    },
+    "hospital": {
+        lines: [{ expression: Sad, speaker: narrator, text: "El hospital está de paro. Un cartel dice: «En defensa de la salud pública»." }],
+        next: "rabia",
     },
     "independent": {
         lines: [{ expression: Smug, speaker: narrator, text: "Bloqueás a @Vladimir_Putazo. Te sentís incorruptible. Te sentís Belgrano." }],
@@ -308,6 +357,26 @@ export const STORY: Record<NodeId, StoryNode> = {
             { speaker: narrator, text: "Te responden de todos lados. La mitad te dice genocida. La otra mitad también." },
         ],
     },
+    "park": {
+        choices: {
+            options: [
+                { effects: { anger: 2 }, id: "park-bark", label: "Ladrarle al ovejero", next: "park-bite" },
+                { effects: { lgbt: 1 },  id: "park-ball", label: "Ofrecerle la pelota", next: "park-bite" },
+            ],
+            prompt: { expression: Angry, speaker: player, text: "Ese perro me está mirando." },
+        },
+        lines: [
+            { expression: Happy, speaker: narrator, text: "Parque Centenario. Orejas, colas, collares. Te ponés en cuatro patas y ladrás. Por primera vez en años, no estás enojado." },
+            { speaker: narrator, text: "Un ovejero alemán de verdad te mira desde lejos. Él no está jugando." },
+        ],
+    },
+    "park-bite": {
+        lines: [
+            { expression: Shocked, speaker: narrator, text: "El ovejero no distingue un furro de un salame. Te muerde la pierna." },
+            { speaker: goro,     text: "Tranqui, compañere. Los perros también son víctimas del sistema." },
+        ],
+        next: "rabies-days",
+    },
     "politics": {
         choices: {
             options: [
@@ -325,6 +394,30 @@ export const STORY: Record<NodeId, StoryNode> = {
             { speaker: narrator, text: "Hasta que Moscú hace recorte de personal. En Moscú los despidos son definitivos." },
         ],
         next: "kremlin",
+    },
+    "rabia": {
+        ending: "rabia",
+        lines:  [
+            { expression: Sad, place: "bathroom", speaker: narrator, text: "Te encerrás en el baño. Es el único lugar sin agua a la vista. Salvo el inodoro." },
+            { place: "death-home", speaker: narrator, text: "Sentado, abrís las noticias: «Récord de vacunación antirrábica gratuita en todo el país»." },
+            { speaker: narrator, text: "Pujás con bronca. Con rabia, mejor dicho." },
+            { beat: "shake", speaker: narrator, text: "Mirás el agua del inodoro y te agarra el pánico. Espuma. Temblor." },
+            { expression: Furious, speaker: player, text: "¡GUAU! ¡GUAU! ¡VAMOS A VOLVER!" },
+            { beat: "tip", expression: Dead, speaker: narrator, text: "Moriste como viviste: con rabia." },
+        ],
+    },
+    "rabies-days": {
+        choices: {
+            options: [
+                { id: "rabies-hospital",                              label: "Ir al hospital",                     next: "hospital" },
+                { effects: { anger: 2, fame: 2 }, id: "rabies-tweet", label: "Tuitear que la rabia es un invento", next: "rabia" },
+            ],
+            prompt: { expression: Furious, speaker: player, text: "Grrr..." },
+        },
+        lines: [
+            { expression: Sad, speaker: narrator, text: "Una semana después te da miedo el agua. Y la luz. Y el INDEC." },
+            { speaker: narrator, text: "Te sale espuma cuando ves a Mileón. Bueno, eso ya te pasaba." },
+        ],
     },
     "russia-2": {
         choices: {
@@ -547,6 +640,7 @@ export const STORY: Record<NodeId, StoryNode> = {
             options: [
                 { effects: { anger: 1, fame: 2, peronism: 1 },      id: "against-milei", label: "Contra Mileón",       next: "russia-2" },
                 { effects: { communism: 1, fame: 1, palestine: 3 }, id: "palestine",     label: "Por Palestina",       next: "palestine" },
+                { effects: { fame: 1, lgbt: 1 },                    id: "furros",        label: "Por los furros",      next: "furros" },
                 { effects: { anger: 2, fame: 3 },                   id: "caps-4am",      label: "EN MAYÚSCULAS, 4 AM", next: "russia-2", when: ({ stats: { anger } }) => anger >= 4 },
             ],
             prompt: { expression: Angry, speaker: player, text: "¿Y hoy contra quién tuiteo?" },
