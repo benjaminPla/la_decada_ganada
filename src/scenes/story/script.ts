@@ -136,7 +136,7 @@ export const STORY: Record<NodeId, StoryNode> = {
             prompt: { expression: Shocked, speaker: player, text: "¿Y ahora qué hago?" },
         },
         lines: [
-            { speaker: tn,       text: "ÚLTIMO MOMENTO: desbaratan una red de trolls pagados por Rusia. El más activo: «el compañero de las 3 AM»." },
+            { speaker: tn,       text: "ÚLTIMO MOMENTO: desbaratan una red de trolls pagados por Rusia. El más activo: «Klonazepam»." },
             { expression: Shocked, speaker: player, text: "¡Es una operación de los medios hegemónicos!" },
             { expression: Sad, speaker: narrator, text: "Esta vez no. Esta vez era cierto." },
         ],
@@ -207,7 +207,7 @@ export const STORY: Record<NodeId, StoryNode> = {
         lines: [{ speaker: narrator, text: "Te escribe Greta Thunbarco: «Zarpamos a Gaza. Traé tu bandera y tu indignación»." }],
     },
     "independent": {
-        lines: [{ expression: Smug, speaker: narrator, text: "Bloqueás a @Vladimir_Retuitov. Te sentís incorruptible. Te sentís Belgrano." }],
+        lines: [{ expression: Smug, speaker: narrator, text: "Bloqueás a @Vladimir_Putazo. Te sentís incorruptible. Te sentís Belgrano." }],
         route: [
             { next: "politics", when: ({ fame }) => fame >= POLITICS_FAME },
             { next: "to-be-continued" },
@@ -265,7 +265,7 @@ export const STORY: Record<NodeId, StoryNode> = {
             ],
             prompt: { expression: Greedy, speaker: player, text: "Doscientos verdes..." },
         },
-        lines: [{ sfx: "notify", speaker: narrator, text: "@Vladimir_Retuitov otra vez: «Amigo, subimos oferta. 200 dólares por posteo. Sin impuestos, ¿da?»." }],
+        lines: [{ sfx: "notify", speaker: narrator, text: "@Vladimir_Putazo otra vez: «Amigo, subimos oferta. 200 dólares por posteo. Sin impuestos, ¿da?»." }],
     },
     "russia-3": {
         choices: {
@@ -373,8 +373,8 @@ export const STORY: Record<NodeId, StoryNode> = {
         lines: [
             { place: "room", sfx: "notify", speaker: narrator, text: "«ESTO ES UNA DICTADURA DEL SUPERÁVIT. DESPIERTEN.» Publicado a las 3:47 AM." },
             { expression: Greedy, speaker: narrator, text: "A la mañana tenés 40.000 seguidores. Te retuiteó Víctor Hugo Inmorales." },
-            { speaker: narrator, text: "En un mes sos tendencia todos los días. En Y te dicen «el compañero de las 3 AM»." },
-            { speaker: narrator, text: "Un día te escribe @Vladimir_Retuitov, desde Rusia: «Hola amigo. Pagamos 20 dólares por posteo. Es mucho dinero, ¿da?»." },
+            { speaker: narrator, text: "En un mes sos tendencia todos los días. En Y te dicen «Klonazepam»." },
+            { speaker: narrator, text: "Un día te escribe @Vladimir_Putazo, desde Rusia: «Hola amigo. Pagamos 20 dólares por posteo. Es mucho dinero, ¿da?»." },
         ],
     },
     "viral-2": {

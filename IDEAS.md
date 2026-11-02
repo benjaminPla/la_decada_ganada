@@ -79,5 +79,5 @@ Pixel art, ultra chad: sideburns (patillas), square jaw and chin, giant smile.
 | Abuelas de Plaza de Mayo | Abuelas de Plaza de Marzo | mate sticker |
 | Russia / Kremlin | as is | troll farm, hitman |
 | Greta Thunberg | Greta Thunbarco | Thunberg + barco; Gaza flotilla, "HOW DARE YOU!" |
-| Russian handler | Vladimir Retuitov | pays 20 USD per post, "es mucho dinero, ¿da?" |
+| Russian handler | Vladimir Putazo | pays 20 USD per post, "es mucho dinero, ¿da?" |
 | INDEC | as is | the "publicó el dato" joke |
