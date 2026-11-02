@@ -1,10 +1,7 @@
 import { DialogBox } from "../../ui/dialogBox";
+import type { IntroBeat, Opening } from "./types";
 import Phaser from "phaser";
 import { SILHOUETTE, steps } from "../../ui/cinematic";
-import { textStyle } from "../../theme";
-
-// script lines fire beats: open lifts the title card, fade closes on black
-export type OfficeBeat = "fade" | "fist" | "open" | "write";
 
 type Pose = "fist" | "rest" | "write";
 
@@ -25,7 +22,7 @@ const COLORS = {
 const v = (x: number, y: number) => new Phaser.Math.Vector2(x, y);
 
 // psychoanalyst's office: the player on the couch, the therapist behind his head taking notes
-export function drawOffice(scene: Phaser.Scene) {
+export function drawOffice(scene: Phaser.Scene): Opening {
     const { width } = scene.scale;
     const height = scene.scale.height - DialogBox.HEIGHT;
     const floor = height - 50;
@@ -39,22 +36,10 @@ export function drawOffice(scene: Phaser.Scene) {
     const pose = (p: Pose, phase = 0) => drawTherapist(therapist, floor, p, phase);
     pose("rest");
 
-    const title = scene.add.container(0, 0, [
-        scene.add.rectangle(0, 0, width, height, 0x000000).setOrigin(0),
-        scene.add.text(width / 2, height / 2, "AÑO 3 DEL MILEONATO", textStyle("ui", "xl")).setOrigin(0.5),
-    ]);
-    const blackout = scene.add.rectangle(0, 0, width, height, 0x000000).setOrigin(0).setAlpha(0);
-
-    const play = (beat: OfficeBeat) => {
+    const play = (beat: IntroBeat) => {
         switch (beat) {
-            case "fade":
-                steps(scene, 4, (i) => blackout.setAlpha((i + 1) / 4));
-                break;
             case "fist":
                 pose("fist");
-                break;
-            case "open":
-                steps(scene, 4, (i) => title.setAlpha(1 - (i + 1) / 4), () => title.destroy());
                 break;
             case "write":
                 steps(scene, 12, (i) => pose("write", i), () => pose("rest"));

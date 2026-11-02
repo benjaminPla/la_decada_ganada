@@ -60,7 +60,7 @@ function floorY(scene: Phaser.Scene) {
 
 // ---- shared: the player sitting sideways, facing left; a silhouette lit only by the phone
 
-function drawSitter(scene: Phaser.Scene, x: number, seat: number) {
+export function drawSitter(scene: Phaser.Scene, x: number, seat: number) {
     const g = scene.add.graphics();
     const v = (px: number, py: number) => new Phaser.Math.Vector2(px, py);
 
