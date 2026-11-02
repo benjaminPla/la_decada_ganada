@@ -11,6 +11,7 @@ import { THEME } from "../../theme";
 export type NodeId =
     | "activism"
     | "c6n"
+    | "campora"
     | "caught"
     | "councillor"
     | "cristina"
@@ -19,7 +20,10 @@ export type NodeId =
     | "fueros"
     | "greta"
     | "independent"
+    | "independent-greta"
     | "kremlin"
+    | "kremlin-spite"
+    | "maximo"
     | "palestine"
     | "politics"
     | "quiet"
@@ -28,17 +32,32 @@ export type NodeId =
     | "san-jose"
     | "san-jose-cold"
     | "start"
-    | "to-be-continued"
     | "troll"
+    | "troll-greta"
     | "troll-raise"
     | "troll-settle"
+    | "troll-weeks"
     | "tweet"
     | "uruguay"
     | "vigil"
+    | "vigil-days"
+    | "vigil-exposed"
+    | "vigil-fifa"
+    | "vigil-maximo"
+    | "vigil-paco"
+    | "vigil-porro"
+    | "vigil-ps5"
+    | "vigil-toilet"
     | "viral"
     | "viral-2";
 
-export type Condition = (stats: Readonly<Stats>) => boolean;
+// doom: the ending the run is headed to; a later doom replaces it, nothing clears it
+export type Run = {
+    doom:  EndingId | null;
+    stats: Stats;
+};
+
+export type Condition = (run: Readonly<Run>) => boolean;
 
 // expression and place stick until a later line changes them; beat and sfx fire once as the line starts
 export type StoryLine = DialogLine & {
@@ -50,6 +69,7 @@ export type StoryLine = DialogLine & {
 
 // hidden: options whose `when` fails are not shown
 export type StoryChoice = {
+    doom?:    EndingId;
     effects?: Partial<Stats>;
     id:       string;
     label:    string;
@@ -76,12 +96,14 @@ export type StoryNode = {
 export const SPEAKERS = {
     c6n:      { color: THEME.colors.alert,     name: "Víctor Hugo Inmorales (C6N)" },
     greta:    { color: THEME.colors.accent,    name: "Greta Thunbarco" },
+    maximo:   { color: THEME.colors.ink,       name: "Máximo" },
     narrator: { color: THEME.colors.textMuted, name: "" },
+    paco:     { color: THEME.colors.accent,    name: "Padre Paco" },
     player:   { color: THEME.colors.text,      name: "Vos" },
     tn:       { color: THEME.colors.phosphor,  name: "TN - Todo Narrativa" },
 } as const satisfies Record<string, Speaker>;
 
-const { c6n, greta, narrator, player, tn } = SPEAKERS;
+const { c6n, greta, maximo, narrator, paco, player, tn } = SPEAKERS;
 const { Angry, Dead, Furious, Greedy, Happy, Sad, Shocked, Smug } = Expression;
 
 // ---- thresholds
@@ -93,8 +115,10 @@ const POLITICS_FAME = 7;
 const URUGUAY_MONEY = 5;
 const VIGIL_PERONISM = 7;
 
+const isDoomed = (ending: EndingId): Condition => ({ doom }) => doom === ending;
+
 const TROLL_ROUTE: readonly StoryRoute[] = [
-    { next: "caught", when: ({ fame, money }) => fame + money >= CAUGHT_FAME_MONEY },
+    { next: "caught", when: ({ stats: { fame, money } }) => fame + money >= CAUGHT_FAME_MONEY },
     { next: "quiet" },
 ];
 
@@ -104,7 +128,7 @@ export const STORY: Record<NodeId, StoryNode> = {
     "activism": {
         lines: [{ expression: Furious, speaker: narrator, text: "Vas a tres marchas en una semana: Palestina, el orgullo y una que no entendiste." }],
         route: [
-            { next: "greta", when: ({ palestine }) => palestine >= FLOTILLA_PALESTINE },
+            { next: "greta", when: ({ stats: { palestine } }) => palestine >= FLOTILLA_PALESTINE },
             { next: "russia-2" },
         ],
     },
@@ -125,13 +149,20 @@ export const STORY: Record<NodeId, StoryNode> = {
             { speaker: narrator, text: "Te tiembla el ojo izquierdo. Agarrás el celular." },
         ],
     },
+    "campora": {
+        lines: [
+            { sfx: "notify", speaker: narrator, text: "Te escribe La Cámpora: «Compañero, tu primera tarea: bancar la vigilia en San José 1111. Hasta que salga»." },
+            { place: "san-jose", sfx: "crowd", speaker: narrator, text: "Ni te pregunta. Esa misma noche estás en la vereda con un bombo prestado." },
+        ],
+        next: "vigil-paco",
+    },
     "caught": {
         channel: "tn",
         choices: {
             options: [
-                { id: "caught-deny",    label: "Decir que te hackearon",   next: "kremlin" },
-                { id: "caught-fueros",  label: "Afiliarte por los fueros", next: "fueros",  when: ({ peronism }) => peronism >= FUEROS_PERONISM },
-                { id: "caught-uruguay", label: "Escaparte a Uruguay",      next: "uruguay", when: ({ money }) => money >= URUGUAY_MONEY },
+                { id: "caught-deny",                           label: "Decir que te hackearon",   next: "kremlin" },
+                { doom: "san-jose-vigil", id: "caught-fueros", label: "Afiliarte por los fueros", next: "fueros",  when: ({ stats: { peronism } }) => peronism >= FUEROS_PERONISM },
+                { id: "caught-uruguay",                        label: "Escaparte a Uruguay",      next: "uruguay", when: ({ stats: { money } }) => money >= URUGUAY_MONEY },
             ],
             prompt: { expression: Shocked, speaker: player, text: "¿Y ahora qué hago?" },
         },
@@ -146,7 +177,7 @@ export const STORY: Record<NodeId, StoryNode> = {
             { expression: Smug, speaker: narrator, text: "Jurás por Perón, por Evita y por los ñoquis presentes y futuros." },
             { speaker: narrator, text: "Tenés despacho, chofer y un primo nuevo en planta permanente." },
         ],
-        next: "to-be-continued",
+        next: "campora",
     },
     "cristina": {
         choices: {
@@ -194,7 +225,7 @@ export const STORY: Record<NodeId, StoryNode> = {
             { speaker: tn,       text: "El «troll del Kremlin» juró como concejal. «Es una persecución», declaró." },
             { expression: Smug, speaker: player, text: "Zafé." },
         ],
-        next: "to-be-continued",
+        next: "campora",
     },
     "greta": {
         choices: {
@@ -209,14 +240,24 @@ export const STORY: Record<NodeId, StoryNode> = {
     "independent": {
         lines: [{ expression: Smug, speaker: narrator, text: "Bloqueás a @Vladimir_Putazo. Te sentís incorruptible. Te sentís Belgrano." }],
         route: [
-            { next: "politics", when: ({ fame }) => fame >= POLITICS_FAME },
-            { next: "to-be-continued" },
+            { next: "politics", when: ({ stats: { fame } }) => fame >= POLITICS_FAME },
+            { next: "independent-greta" },
         ],
+    },
+    "independent-greta": {
+        choices: {
+            options: [
+                { doom: "flotilla", effects: { lgbt: 3, palestine: 2 }, id: "independent-board",  label: "Subirte al barco",         next: "flotilla" },
+                { effects: { fame: 1 },                                 id: "independent-refuse", label: "Rechazar a Greta también", next: "kremlin-spite" },
+            ],
+            prompt: { expression: Shocked, speaker: player, text: "¿Yo? ¿En un barco?" },
+        },
+        lines: [{ sfx: "notify", speaker: narrator, text: "Te escribe Greta Thunbarco: «Vi que le dijiste que no a Rusia. Zarpamos a Gaza. Necesitamos gente incorruptible»." }],
     },
     "kremlin": {
         ending: "kremlin-troll",
         lines:  [
-            { expression: Sad, place: "bathroom", speaker: narrator, text: "Moscú no perdona a los que se queman. Esa noche no podés dormir y vas al baño con el celular, como todo hombre de bien." },
+            { expression: Sad, place: "bathroom", speaker: narrator, text: "Moscú no perdona. Esa noche no podés dormir y vas al baño con el celular, como todo hombre de bien." },
             { place: "death-home", speaker: narrator, text: "Sentado en el inodoro, scrolleás: «Bolivia elige un presidente de derecha después de veinte años»." },
             { speaker: narrator, text: "«Chile también». Pujás con bronca." },
             { sfx: "knock", speaker: narrator, text: "Alguien golpea la puerta." },
@@ -224,6 +265,33 @@ export const STORY: Record<NodeId, StoryNode> = {
             { beat: "enter", speaker: narrator, text: "La puerta se abre igual. Un señor de traje y gorro de piel entra sin apuro." },
             { beat: "aim", speaker: narrator, text: "«Vladimir manda saludos. Y quiere sus veinte dólares de vuelta»." },
             { beat: "bang", expression: Dead, sfx: "gunshot", speaker: narrator, text: "Moriste como viviste: sentado, indignado y con el celular en la mano." },
+        ],
+    },
+    "kremlin-spite": {
+        ending: "kremlin-troll",
+        lines:  [
+            { sfx: "notify", speaker: narrator, text: "@Vladimir_Putazo: «Amigo, le dijiste que no a Rusia tres veces. Eso no es bueno para la salud, ¿da?»." },
+            { expression: Smug, speaker: player, text: "Soy incorruptible." },
+            { expression: Sad, place: "bathroom", speaker: narrator, text: "Esa noche no podés dormir y vas al baño con el celular, como todo hombre de bien." },
+            { place: "death-home", speaker: narrator, text: "Sentado en el inodoro, scrolleás: «Bolivia elige un presidente de derecha después de veinte años»." },
+            { speaker: narrator, text: "«Chile también». Pujás con bronca." },
+            { sfx: "knock", speaker: narrator, text: "Alguien golpea la puerta." },
+            { expression: Shocked, speaker: player, text: "¡OCUPADO!" },
+            { beat: "enter", speaker: narrator, text: "La puerta se abre igual. Un señor de traje y gorro de piel entra sin apuro." },
+            { beat: "aim", speaker: narrator, text: "«Vladimir manda saludos. Dice que a Vladimir no se le dice que no»." },
+            { beat: "bang", expression: Dead, sfx: "gunshot", speaker: narrator, text: "Moriste como viviste: diciendo que no a todo." },
+        ],
+    },
+    "maximo": {
+        ending: "maximo",
+        lines:  [
+            { place: "death-chemical", speaker: narrator, text: "Sentado, abrís las noticias: «Mileón elimina los impuestos a la electrónica. La Play 5 sale la mitad»." },
+            { speaker: narrator, text: "Pujás con bronca." },
+            { sfx: "knock", speaker: narrator, text: "Golpean la puerta del baño químico. Un solo golpe." },
+            { beat: "enter", speaker: narrator, text: "Es Máximo. Tiene la Play rota abajo del brazo." },
+            { expression: Shocked, speaker: player, text: "¡Era un golazo, Máximo! ¡Era un golazo!" },
+            { beat: "aim", speaker: narrator, text: "Todo se pone azul. A Máximo se le prenden los ojos. A vos también. No sabés por qué." },
+            { beat: "bang", expression: Dead, sfx: "gunshot", speaker: narrator, text: "Moriste como viviste: festejando antes de tiempo." },
         ],
     },
     "palestine": {
@@ -243,8 +311,8 @@ export const STORY: Record<NodeId, StoryNode> = {
     "politics": {
         choices: {
             options: [
-                { effects: { corruption: 3, money: 3, peronism: 2 }, id: "politics-accept", label: "Aceptar la banca",     next: "councillor" },
-                { id: "politics-reject",                             label: "Seguir independiente", next: "to-be-continued" },
+                { doom: "san-jose-vigil", effects: { corruption: 3, money: 3, peronism: 2 }, id: "politics-accept", label: "Aceptar la banca",     next: "councillor" },
+                { id: "politics-reject",                                                                            label: "Seguir independiente", next: "independent-greta" },
             ],
             prompt: { expression: Greedy, speaker: player, text: "¿Concejal? ¿Con sueldo?" },
         },
@@ -254,8 +322,9 @@ export const STORY: Record<NodeId, StoryNode> = {
         lines: [
             { expression: Sad, speaker: narrator, text: "Sos un troll más entre millones. Nadie te nota. Ni Moscú." },
             { expression: Sad, speaker: player, text: "Veinte dólares por posteo... Bueno, algo es algo." },
+            { speaker: narrator, text: "Hasta que Moscú hace recorte de personal. En Moscú los despidos son definitivos." },
         ],
-        next: "to-be-continued",
+        next: "kremlin",
     },
     "russia-2": {
         choices: {
@@ -278,10 +347,17 @@ export const STORY: Record<NodeId, StoryNode> = {
         lines: [{ sfx: "notify", speaker: narrator, text: "Último mensaje: «Departamento en Sochi con vista al mar. Y foto con Vladimir. El otro»." }],
     },
     "san-jose": {
-        lines: [{ place: "san-jose", sfx: "crowd", speaker: narrator, text: "Llegás a San José 1111. Hay bombos, choripanes y un señor que vende banderas en doce cuotas." }],
-        route: [
-            { next: "vigil", when: ({ peronism }) => peronism >= VIGIL_PERONISM },
-            { next: "san-jose-cold" },
+        choices: {
+            options: [
+                { doom: "san-jose-vigil", effects: { peronism: 2 }, id: "vigil-stay",                        label: "Quedarte hasta que salga", next: "vigil-paco", when: ({ stats: { peronism } }) => peronism >= VIGIL_PERONISM },
+                { doom: "kremlin-troll",  effects: { corruption: 3, fame: 2, money: 5 }, id: "vigil-stream", label: "Transmitir para Vladimir", next: "vigil-paco" },
+                { id: "san-jose-leave",                                                                      label: "Volverte a casa",          next: "san-jose-cold" },
+            ],
+            prompt: { expression: Greedy, speaker: player, text: "Quinientos dólares por mirar un balcón..." },
+        },
+        lines: [
+            { place: "san-jose", sfx: "crowd", speaker: narrator, text: "Llegás a San José 1111. Hay bombos, choripanes y un señor que vende banderas en doce cuotas." },
+            { sfx: "notify", speaker: narrator, text: "Te escribe un tal @Vladimir_Putazo: «Amigo, transmití la vigilia en vivo. 500 dólares. La cámara la ponemos nosotros, ¿da?»." },
         ],
     },
     "san-jose-cold": {
@@ -308,9 +384,6 @@ export const STORY: Record<NodeId, StoryNode> = {
             { expression: Furious, speaker: player, text: "¡¿Publicó el dato?! ¿Adónde vamos a parar?" },
         ],
     },
-    "to-be-continued": {
-        lines: [{ speaker: narrator, text: "Continuará..." }],
-    },
     "troll": {
         choices: {
             options: [
@@ -321,12 +394,26 @@ export const STORY: Record<NodeId, StoryNode> = {
         },
         lines: [{ expression: Greedy, sfx: "coins", speaker: narrator, text: "Ahora publicás lo que te mandan desde Moscú. Te sentís un oligarca." }],
     },
+    "troll-greta": {
+        choices: {
+            options: [
+                { doom: "flotilla", effects: { lgbt: 3, palestine: 2 }, id: "troll-board", label: "Pagarte el barco con plata rusa", next: "flotilla" },
+                { id: "troll-keep",                                                         label: "Seguir posteando para Moscú",     next: "troll-weeks" },
+            ],
+            prompt: { expression: Greedy, speaker: player, text: "Con la plata rusa me pago el pasaje..." },
+        },
+        lines: [{ sfx: "notify", speaker: narrator, text: "Entre posteo y posteo te aparece un video de Greta Thunbarco: «Zarpamos a Gaza. Faltan voluntarios. HOW DARE YOU!»." }],
+    },
     "troll-raise": {
         lines: [{ expression: Greedy, sfx: "coins", speaker: narrator, text: "Vladimir acepta. Te paga el doble y te pide el triple." }],
-        route: TROLL_ROUTE,
+        next: "troll-greta",
     },
     "troll-settle": {
         lines: [{ speaker: narrator, text: "Seguís cobrando lo mismo. Posteás en silencio, como un troll más." }],
+        next: "troll-greta",
+    },
+    "troll-weeks": {
+        lines: [{ speaker: narrator, text: "Pasan las semanas. Posteás, cobrás, posteás." }],
         route: TROLL_ROUTE,
     },
     "tweet": {
@@ -344,15 +431,13 @@ export const STORY: Record<NodeId, StoryNode> = {
             { expression: Greedy, place: "colonia", sfx: "waves", speaker: narrator, text: "Agarrás los dólares rusos y te tomás el Buquebus. En Colonia nadie te conoce." },
             { expression: Happy, speaker: player, text: "Zafé." },
             { speaker: narrator, text: "Por ahora." },
+            { speaker: narrator, text: "Al mes subís una foto: «Atardecer en Colonia». Con ubicación." },
         ],
-        next: "to-be-continued",
+        next: "kremlin",
     },
     "vigil": {
         ending: "san-jose-vigil",
         lines:  [
-            { expression: Furious, place: "san-jose", speaker: narrator, text: "No te vas. Un día, dos, nueve. Dormís en la vereda y comés lo que reparte la militancia." },
-            { speaker: narrator, text: "El único baño es una fila de baños químicos. Ya los conocés por el nombre." },
-            { speaker: narrator, text: "Día once. Te agarra la urgencia. Entrás al de siempre: el tercero." },
             { place: "death-chemical", speaker: narrator, text: "Sentado, abrís las noticias: «El Congreso aprueba el presupuesto de Mileón. Con votos peronistas»." },
             { speaker: narrator, text: "Pujás con bronca." },
             { beat: "shake", sfx: "crowd", speaker: narrator, text: "Afuera, un rugido. Se abrió el balcón. Cristina saluda." },
@@ -360,6 +445,86 @@ export const STORY: Record<NodeId, StoryNode> = {
             { beat: "shake", sfx: "crowd", speaker: narrator, text: "La multitud salta. Diez mil peronistas. El baño químico salta con ellos." },
             { beat: "shake", speaker: narrator, text: "«¡VAMOS A VOLVER!» Saltan más alto. El bombo retumba en el inodoro." },
             { beat: "tip", expression: Dead, sfx: "crash", speaker: narrator, text: "Y se da vuelta. Moriste como viviste: dando vueltas sobre lo mismo." },
+        ],
+    },
+    "vigil-days": {
+        lines: [{ expression: Sad, speaker: narrator, text: "Día diez. Cristina no sale. Vos tampoco." }],
+        route: [
+            { next: "vigil-exposed", when: isDoomed("kremlin-troll") },
+            { next: "vigil-toilet" },
+        ],
+    },
+    "vigil-exposed": {
+        lines: [
+            { sfx: "notify", speaker: tn, text: "ÚLTIMO MOMENTO: un troll del Kremlin estaba infiltrado en la vigilia de San José 1111." },
+            { expression: Shocked, speaker: player, text: "¿Cómo se enteraron?" },
+            { place: "room", speaker: narrator, text: "La militancia te reconoce. Corrés las treinta cuadras hasta tu casa sin mirar atrás." },
+        ],
+        next: "kremlin",
+    },
+    "vigil-fifa": {
+        choices: {
+            options: [
+                { effects: { corruption: 1, peronism: 2 }, id: "fifa-lose", label: "Dejarlo ganar",    next: "vigil-days" },
+                { doom: "maximo", effects: { anger: 3 }, id: "fifa-goal",   label: "Gritar el octavo", next: "vigil-ps5" },
+            ],
+            prompt: { expression: Smug, speaker: player, text: "Uno más y lo humillo." },
+        },
+        lines: [
+            { speaker: narrator, text: "Él elige Argentina. A vos te deja Brasil. Al minuto ochenta vas siete a cero." },
+            { speaker: maximo,   text: "Dale que todavía se da vuelta." },
+        ],
+    },
+    "vigil-maximo": {
+        choices: {
+            options: [
+                { id: "fifa-play",                                                                 label: "Jugar al FIFA con Máximo",  next: "vigil-fifa" },
+                { doom: "kremlin-troll", effects: { corruption: 2, money: 5 }, id: "maximo-photo", label: "Sacarle la foto a Máximo",  next: "vigil-days" },
+                { effects: { peronism: 1 },                                    id: "vigil-sing",   label: "Seguir cantando la marcha", next: "vigil-days" },
+            ],
+            prompt: { expression: Happy, speaker: player, text: "¿Una Play? ¿En la vigilia?" },
+        },
+        lines: [
+            { speaker: narrator, text: "Día nueve. Baja Máximo con una Play 5 y un generador. «Para bancar la vigilia», dice." },
+            { speaker: maximo,   text: "¿Quién se juega un FIFA? Yo soy Argentina." },
+            { sfx: "notify", speaker: narrator, text: "Te vibra el celular. @Vladimir_Putazo: «Amigo, foto de Máximo con la Play. 1.000 dólares»." },
+        ],
+    },
+    "vigil-paco": {
+        choices: {
+            options: [
+                { effects: { anger: -2 },   id: "paco-accept", label: "Aceptar el porro bendito", next: "vigil-porro" },
+                { effects: { peronism: 1 }, id: "paco-pray",   label: "Rezar un Padre Nuestro",   next: "vigil-maximo" },
+            ],
+            prompt: { expression: Shocked, speaker: player, text: "¿Eso es lo que creo que es?" },
+        },
+        lines: [
+            { expression: Furious, speaker: narrator, text: "No te vas. Un día, dos, ocho. Dormís en la vereda y comés lo que reparte la militancia." },
+            { speaker: narrator, text: "El único baño es una fila de baños químicos. Ya los conocés por el nombre." },
+            { speaker: paco,     text: "Hijo, tomá un guiso. Y esto, que es medicinal. Lo bendije yo." },
+        ],
+    },
+    "vigil-porro": {
+        lines: [
+            { expression: Happy, speaker: narrator, text: "Ves a Perón en una nube. Te guiña un ojo. Le pedís un plan." },
+            { speaker: player, text: "Padre... ¿usted cree que hoy sale?" },
+            { speaker: paco,   text: "Hijo, yo ya no creo en nada. Pasame el encendedor." },
+        ],
+        next: "vigil-maximo",
+    },
+    "vigil-ps5": {
+        lines: [
+            { expression: Furious, sfx: "crowd", speaker: player, text: "¡GOOOOOL! ¡OCHO A CERO!" },
+            { expression: Shocked, sfx: "crash", speaker: narrator, text: "Saltás, enganchás el cable del generador y la Play vuela. Rebota en un bombo y cae de cara al asfalto." },
+            { speaker: narrator, text: "Máximo no dice nada. Junta los pedazos y se va. Te mira una sola vez." },
+        ],
+        next: "vigil-days",
+    },
+    "vigil-toilet": {
+        lines: [{ speaker: narrator, text: "Día once. Te agarra la urgencia. Entrás al de siempre: el tercero." }],
+        route: [
+            { next: "maximo", when: isDoomed("maximo") },
+            { next: "vigil" },
         ],
     },
     "viral": {
@@ -382,7 +547,7 @@ export const STORY: Record<NodeId, StoryNode> = {
             options: [
                 { effects: { anger: 1, fame: 2, peronism: 1 },      id: "against-milei", label: "Contra Mileón",       next: "russia-2" },
                 { effects: { communism: 1, fame: 1, palestine: 3 }, id: "palestine",     label: "Por Palestina",       next: "palestine" },
-                { effects: { anger: 2, fame: 3 },                   id: "caps-4am",      label: "EN MAYÚSCULAS, 4 AM", next: "russia-2", when: ({ anger }) => anger >= 4 },
+                { effects: { anger: 2, fame: 3 },                   id: "caps-4am",      label: "EN MAYÚSCULAS, 4 AM", next: "russia-2", when: ({ stats: { anger } }) => anger >= 4 },
             ],
             prompt: { expression: Angry, speaker: player, text: "¿Y hoy contra quién tuiteo?" },
         },

@@ -4,7 +4,7 @@ import { DialogBox } from "../../ui/dialogBox";
 import { EMPTY_STATS, type Stat, type Stats } from "../../stats";
 import { Expression } from "./types";
 import { LAYOUT } from "./layout";
-import { type NodeId, START, STORY, type StoryLine } from "./script";
+import { type NodeId, type Run, START, STORY, type StoryLine } from "./script";
 import { PAUSE_KEY, bindAudioKeys } from "../../controls";
 import { PLAYER_FACES } from "./art/player";
 import Phaser from "phaser";
@@ -23,7 +23,7 @@ export class Story extends Phaser.Scene {
     private places!: Partial<Record<PlaceId, Phaser.GameObjects.Container>>;
     private player!: Phaser.GameObjects.Image;
     private shake!:  Phaser.Tweens.Tween;
-    private stats!:  Stats;
+    private state!:  Run;
     private tv!:     ReturnType<typeof drawTv>;
 
     constructor() {
@@ -33,7 +33,7 @@ export class Story extends Phaser.Scene {
     create() {
         const { player } = LAYOUT;
 
-        this.stats = { ...EMPTY_STATS };
+        this.state = { doom: null, stats: { ...EMPTY_STATS } };
         track(this.game, { type: "run-started" });
         playMusic(this);
         this.tv = drawTv(this, CHANNELS.tn);
@@ -68,7 +68,7 @@ export class Story extends Phaser.Scene {
     }
 
     private apply(effects: Partial<Stats> = {}) {
-        (Object.entries(effects) as [Stat, number][]).forEach(([stat, delta]) => { this.stats[stat] += delta });
+        (Object.entries(effects) as [Stat, number][]).forEach(([stat, delta]) => { this.state.stats[stat] += delta });
     }
 
     // places sit behind the player and dialog, with their objects on top of the background
@@ -123,18 +123,19 @@ export class Story extends Phaser.Scene {
 
         this.dialog.say(node.lines, () => {
             if (node.choices) {
-                const options = node.choices.options.filter(({ when }) => !when || when(this.stats));
-                this.dialog.ask(node.choices.prompt, options.map(({ effects, id, label, next }) => ({
+                const options = node.choices.options.filter(({ when }) => !when || when(this.state));
+                this.dialog.ask(node.choices.prompt, options.map(({ doom, effects, id, label, next }) => ({
                     label,
                     onPick: () => {
                         this.apply(effects);
-                        track(this.game, { choice: id, stats: this.stats, type: "choice-made" });
+                        this.state.doom = doom ?? this.state.doom;
+                        track(this.game, { choice: id, stats: this.state.stats, type: "choice-made" });
                         this.run(next);
                     },
                 })));
                 return;
             }
-            const next = node.route?.find(({ when }) => !when || when(this.stats))?.next ?? node.next;
+            const next = node.route?.find(({ when }) => !when || when(this.state))?.next ?? node.next;
             if (next) {
                 this.run(next);
                 return;

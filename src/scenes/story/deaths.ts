@@ -25,11 +25,13 @@ const COLORS = {
     cabinDark: 0x0c1e40,
     door:      0x2a2420,
     doorGap:   0x050505,
+    eyes:      0xffffff,
     flash:     0xfff4c0,
     gazaFloor: 0x24190d,
     gazaStain: 0x2a1e10,
     gazaTint:  0x5a1a10,
     gazaWall:  0x3a2a18,
+    glow:      0x2a6cff,
     homeFloor: 0x141a1a,
     homeGrout: 0x172020,
     homeWall:  0x1f2a2a,
@@ -126,6 +128,27 @@ function drawMilitant(scene: Phaser.Scene, x: number, target: number, color: num
         const lift = aiming ? 0 : 24;
         g.fillRect(-24, -196 + lift, 30, 14).fillRect(6, -192 + lift, 104, 8).fillRect(36, -186 + lift, 10, 24);
         g.fillRect(14, -206 + lift, 12, 30);
+    };
+    redraw(0, false);
+    return { container: scene.add.container(x, floorY(scene), [g]), redraw, target };
+}
+
+// heavy build, beard; carries the broken console under his left arm
+function drawMaximo(scene: Phaser.Scene, x: number, target: number): Figure {
+    const g = scene.add.graphics();
+    const redraw = (phase: number, aiming: boolean) => {
+        const stride = phase % 2 ? 8 : -8;
+        g.clear().fillStyle(SILHOUETTE.dark);
+        g.fillRect(-24 + stride, -100, 18, 100).fillRect(6 - stride, -100, 18, 100);
+        g.fillStyle(SILHOUETTE.grey).fillRoundedRect(-46, -232, 92, 138, 26);
+        g.fillStyle(SILHOUETTE.dark).fillRect(-18, -248, 36, 18);
+        g.fillRect(-24, -298, 48, 54).fillRect(-27, -266, 54, 30).fillRect(-26, -306, 52, 14);
+        g.fillRect(-64, -204, 16, 84);
+        if (aiming) {
+            g.fillRect(14, -208, 96, 16).fillRect(106, -214, 28, 12).fillRect(106, -204, 10, 18);
+        } else {
+            g.fillRect(30, -216, 16, 96);
+        }
     };
     redraw(0, false);
     return { container: scene.add.container(x, floorY(scene), [g]), redraw, target };
@@ -232,6 +255,7 @@ function drawShooting(scene: Phaser.Scene, home: boolean): Death {
 }
 
 // ---- cristina: inside the chemical toilet; the crowd jumps, the screen shakes, it tips over
+// ---- máximo: same toilet; he walks in, everything turns blue, glowing eyes, the sitter blows up
 
 function drawChemical(scene: Phaser.Scene): Death {
     const { width } = scene.scale;
@@ -269,12 +293,21 @@ function drawChemical(scene: Phaser.Scene): Death {
     const sitter = drawSitter(scene, 210, -100);
     const tipping = scene.add.container(790, floor, [cabin, sitter]);
 
+    const maximo = drawMaximo(scene, -120, 600);
+    const tint = scene.add.rectangle(0, 0, width, height, COLORS.glow).setOrigin(0).setAlpha(0);
+    const eyes = scene.add.graphics().setVisible(false);
+    [[maximo.target + 6, floor - 284], [tipping.x + 160, floor - 290]].forEach(([x, y]) => {
+        eyes.fillStyle(COLORS.eyes, 0.25).fillCircle(x + 5, y + 3, 16);
+        eyes.fillStyle(COLORS.eyes).fillRect(x, y, 12, 6);
+    });
+
     const over = scene.add.graphics();
     drawVignette(over, width, height);
+    const flash = scene.add.rectangle(0, 0, width, height, COLORS.eyes).setOrigin(0).setAlpha(0);
     const blackout = scene.add.rectangle(0, 0, width, height, 0x000000).setOrigin(0).setAlpha(0);
 
     const decor = scene.add.container(0, 0);
-    const container = scene.add.container(0, 0, [g, decor, crowd, tipping, over, blackout]);
+    const container = scene.add.container(0, 0, [g, decor, crowd, tipping, maximo.container, tint, eyes, over, flash, blackout]);
 
     const play = (beat: Beat) => {
         switch (beat) {
@@ -291,8 +324,47 @@ function drawChemical(scene: Phaser.Scene): Death {
                     steps(scene, 4, (i) => blackout.setAlpha((i + 1) / 4));
                 });
                 break;
+            case "enter": {
+                const count = Math.ceil((maximo.target - maximo.container.x) / 40);
+                steps(scene, count, (i) => {
+                    maximo.container.x = Math.min(maximo.target, maximo.container.x + 40);
+                    maximo.redraw(i, false);
+                });
+                break;
+            }
+            case "aim":
+                maximo.container.x = maximo.target;
+                maximo.redraw(0, true);
+                tint.setAlpha(0.45);
+                eyes.setVisible(true);
+                break;
+            case "bang":
+                explode(scene, container, tipping.x + 150, floor - 200);
+                sitter.setVisible(false);
+                eyes.setVisible(false);
+                flash.setAlpha(0.9);
+                scene.cameras.main.shake(400, 0.03);
+                steps(scene, 3, (i) => flash.setAlpha([0.5, 0.2, 0][i]), () => {
+                    steps(scene, 4, (i) => blackout.setAlpha((i + 1) / 4));
+                });
+                break;
         }
     };
 
     return { container, decor, play };
+}
+
+// chunks fly out from the center, a few frames, then stay where they landed
+function explode(scene: Phaser.Scene, container: Phaser.GameObjects.Container, x: number, y: number) {
+    const chunks = scene.add.graphics();
+    container.addAt(chunks, container.length - 3);
+    const angles = Array.from({ length: 14 }, (_, i) => (i / 14) * Math.PI * 2);
+    steps(scene, 6, (step) => {
+        const reach = 30 + step * 45;
+        chunks.clear();
+        angles.forEach((angle, i) => {
+            chunks.fillStyle(i % 3 ? SILHOUETTE.dark : COLORS.blood);
+            chunks.fillRect(x + Math.cos(angle) * reach, y + Math.sin(angle) * reach + step * step * 4, 10 + (i % 3) * 6, 10 + (i % 2) * 6);
+        });
+    });
 }
